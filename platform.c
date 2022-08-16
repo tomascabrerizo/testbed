@@ -26,8 +26,8 @@ typedef struct CoreWindow {
 
 #define GLX_CONTEXT_MAJOR_VERSION_ARB 0x2091
 #define GLX_CONTEXT_MINOR_VERSION_ARB 0x2092
-typedef GLXContext (*glXCreateContextAttribsARBProc)(Display*, GLXFBConfig, GLXContext, Bool, const int*);
-typedef void (*glXSwapIntervalEXTProc)(Display *dpy, GLXDrawable drawable, int interval);
+typedef GLXContext (*glXCreateContextAttribsARBProc)(Display *, GLXFBConfig, GLXContext, Bool, const int*);
+typedef void (*glXSwapIntervalEXTProc)(Display *, GLXDrawable , int );
 
 CoreWindow *core_window_create(char *name, int width, int height) {
   CoreWindow *window = (CoreWindow *)malloc(sizeof(*window));
@@ -121,7 +121,8 @@ CoreWindow *core_window_create(char *name, int width, int height) {
     GLX_CONTEXT_MINOR_VERSION_ARB, 3,
     None
   };
-
+  
+  /* TODO: Get context version to be sure we are in 3.3 version */
   window->ctx = glXCreateContextAttribsARB(window->d, best_fbc, 0, True, ctx_attribs);
   XSync(window->d, False);
   if(!glXIsDirect(window->d, window->ctx)) {
@@ -137,7 +138,7 @@ CoreWindow *core_window_create(char *name, int width, int height) {
     glXSwapIntervalEXT(window->d, window->w, 1);
     printf("Vertical Sync enable\n");
   } else {
-    printf("Cannot enable vertical Sync\n");
+    printf("vertical Sync disable\n");
   }
   /* TODO: load opnegl function: */
   #define X(return, name, params) name = (CORE_GL_PROC(name))glXGetProcAddress((GLubyte *)#name);
