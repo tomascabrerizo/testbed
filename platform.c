@@ -1,8 +1,8 @@
+#define CORE_INTERNAL
 #include "platform.h"
 
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
-#include <GL/gl.h>
 #include <GL/glx.h>
 
 #include <stdio.h>
@@ -27,6 +27,7 @@ typedef struct CoreWindow {
 #define GLX_CONTEXT_MAJOR_VERSION_ARB 0x2091
 #define GLX_CONTEXT_MINOR_VERSION_ARB 0x2092
 typedef GLXContext (*glXCreateContextAttribsARBProc)(Display*, GLXFBConfig, GLXContext, Bool, const int*);
+typedef void (*glXSwapIntervalEXTProc)(Display *dpy, GLXDrawable drawable, int interval);
 
 CoreWindow *core_window_create(char *name, int width, int height) {
   CoreWindow *window = (CoreWindow *)malloc(sizeof(*window));
@@ -130,6 +131,19 @@ CoreWindow *core_window_create(char *name, int width, int height) {
 
   glXMakeCurrent(window->d, window->w, window->ctx); 
   
+  /* Set vertical Sync */
+  glXSwapIntervalEXTProc glXSwapIntervalEXT = (glXSwapIntervalEXTProc)glXGetProcAddress((GLubyte *)"glXSwapIntervalEXT");
+  if(glXSwapIntervalEXT) {
+    glXSwapIntervalEXT(window->d, window->w, 1);
+    printf("Vertical Sync enable\n");
+  } else {
+    printf("Cannot enable vertical Sync\n");
+  }
+  /* TODO: load opnegl function: */
+  #define X(return, name, params) name = (CORE_GL_PROC(name))glXGetProcAddress((GLubyte *)#name);
+  CORE_GL_FUNCTIONS(X);
+  #undef X
+
   return window;
 }
 

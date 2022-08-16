@@ -2,13 +2,15 @@
 #include <stdbool.h>
 #include <unistd.h>
 
-#include <GL/gl.h>
-
 #include "platform.h"
 
 int main(void) {
   CoreWindow *window = core_window_create("TestBed", 600, 400);
-  
+ 
+  /* NOTE: OpenGL 3.3 test code */
+  unsigned int vbo;
+  glGenBuffers(1, &vbo);
+
   bool running = true;
   while(running) {
 

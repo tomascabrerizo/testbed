@@ -1,6 +1,7 @@
 #ifndef PLATFORM_H
 #define PLATFORM_H
 
+#include "platform_gl.h"
 
 typedef struct CoreWindow CoreWindow;
 
