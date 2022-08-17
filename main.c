@@ -18,13 +18,9 @@ int main(void) {
 
   /* NOTE: Tokenizer test code */
   CoreFile *obj = core_file_create("teapot.obj");
-  CoreTokenList *tokens = core_tokenize_file(obj);
-  
-  int i;
-  for(i = 0; i < (int)tokens->count; ++i) {
-    printf("Token: %.*s\n", (int)tokens->data[i].data.size, tokens->data[i].data.data);
-  }
-  printf("list count:%lu, size:%lu, bytes:%lu\n", tokens->count, tokens->size, tokens->size * sizeof(CoreToken)); 
+  CoreObjCtx ctx = {0};
+  CoreTokenList *tokens = core_tokenize_obj_file(&ctx, obj);
+  core_token_list_to_vertex_and_index_list(tokens, &ctx);
 
   core_token_list_destroy(tokens);
   core_file_destroy(obj);
