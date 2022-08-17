@@ -8,6 +8,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdbool.h>
 
 /* NOTE: platform specific window */
 typedef struct CoreWindow {
@@ -168,17 +169,34 @@ int core_window_get_height(CoreWindow *window) {
   return window->height;
 }
 
+static void core_state_reset(CoreState *state) {
+  state->quit = false;
+  state->resize = false;
+}
+
 CoreState *core_state_get_state(struct CoreWindow *window) {
+  core_state_reset(&window->state);
   while(XPending(window->d)) {
     XEvent event;
     XNextEvent(window->d, &event);
     switch(event.type) {
       case Expose: {
-        /* TODO: Uninplemented branch */
+      } break;
+      case ConfigureNotify: {
+        XConfigureEvent xce = event.xconfigure;
+        if (xce.width != window->width || xce.height != window->height) {
+          window->state.resize = true;
+          window->state.width = xce.width;
+          window->state.height = xce.height;
+          /* TODO: Remove redundant data like this duplications */
+          window->width = xce.width;
+          window->height = xce.height;
+        }
       } break;
       case ClientMessage: {
-        if (event.xclient.data.l[0] == (long int)window->wmDeleteMessage)
-        window->state.quit = 1;
+        if (event.xclient.data.l[0] == (long int)window->wmDeleteMessage) {
+          window->state.quit = true;
+        }
       } break;
       default: {
         /* TODO: If the event is not handle do nothing */

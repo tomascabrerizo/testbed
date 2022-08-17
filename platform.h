@@ -12,7 +12,13 @@ int core_window_get_height(struct CoreWindow *window);
 void core_window_swap_buffers(struct CoreWindow *window);
 
 typedef struct CoreState {
+  /* NOTE: this bool types need to be reset each frame */
   unsigned char quit;
+  
+  unsigned char resize;
+  int width;
+  int height;
+
 } CoreState;
 
 CoreState *core_state_get_state(struct CoreWindow *window);
