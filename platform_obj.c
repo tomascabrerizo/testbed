@@ -135,7 +135,6 @@ void core_token_list_to_vertex_and_index_list(CoreTokenList *list, CoreObjCtx *c
   ctx->v_list = (float *)malloc(ctx->v_count * sizeof(float));
   ctx->i_list = (int *)malloc(ctx->i_count * sizeof(int));
   uint64_t v_cur = 0;
-  (void)v_cur;
   uint64_t i_cur = 0;
   
   uint64_t head = 0;
@@ -150,7 +149,11 @@ void core_token_list_to_vertex_and_index_list(CoreTokenList *list, CoreObjCtx *c
           float number = core_str8_parse_float(token->data);
           printf("Number: %f\n", number);
           
-          token = list->data + head++;
+          /* TODO: Make this while a toke stack make this logic a lot simpler */
+          head++;
+          token = list->data + head; 
+          printf("cur:%ld, total:%ld\n", ++v_cur, ctx->v_count);
+          /* TODO: Unfinished code */
         }
       } break;
       case CORE_TOKEN_F: {
