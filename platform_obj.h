@@ -31,8 +31,8 @@ typedef enum CoreTokeType {
 
 /* TODO: Move CoreTokenizer to a separate file */
 typedef struct CoreToken {
-  CoreTokeType type;
   CoreStr8 data;
+  CoreTokeType type;
 } CoreToken;
 
 #define CORE_DEFAULT_TOKEN_LIST_SIZE CORE_KB(4) 
@@ -40,6 +40,7 @@ typedef struct CoreTokenList{
   CoreToken *data;
   uint64_t count;
   uint64_t size;
+  uint64_t head;
 } CoreTokenList;
 
 typedef struct CoreTokenizer {
@@ -62,6 +63,7 @@ typedef struct CoreObjCtx {
 
 CoreStr8 core_str8_from_cstr(const char * cstr);
 CoreStr8 core_str8_from_str_and_size(char * cstr, uint64_t size);
+int core_str8_parse_int(CoreStr8 str); 
 float core_str8_parse_float(CoreStr8 str); 
 
 CoreFile *core_file_create(char *path); 
@@ -72,6 +74,11 @@ CoreTokenList *core_tokenize_obj_file(CoreObjCtx *ctx, CoreFile *file);
 CoreTokenList *core_token_list_create();
 void core_token_list_destroy(CoreTokenList *list); 
 void core_token_list_push(CoreTokenList *list, CoreToken token);
+CoreToken *core_token_list_pop(CoreTokenList *list); /* NOTE: Pops a token from the front of the list */
+CoreToken *core_token_list_top(CoreTokenList *list);
 void core_token_list_to_vertex_and_index_list(CoreTokenList *list, CoreObjCtx *ctx);
+
+CoreObjCtx *core_obj_create(const char *path);
+void core_obj_destroy(CoreObjCtx *ctx);
 
 #endif /* PLATFORM_OBJ_H */

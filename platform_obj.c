@@ -17,6 +17,18 @@ CoreStr8 core_str8_from_str_and_size(char * str, uint64_t size) {
   return result;
 }
 
+
+int core_str8_parse_int(CoreStr8 str) {
+  #define STR8_TMP_BUFFER 1024
+  assert(str.size < (STR8_TMP_BUFFER - 1));
+  char buffer[STR8_TMP_BUFFER]; /* TODO: Find simpler way to parse a float */
+  #undef STR8_TMP_BUFFER
+  memcpy(buffer, str.data, str.size);
+  buffer[str.size] = '\0';
+  int result = atoi(buffer);
+  return result;
+} 
+
 float core_str8_parse_float(CoreStr8 str) {
   #define STR8_TMP_BUFFER 1024
   assert(str.size < (STR8_TMP_BUFFER - 1));
@@ -53,6 +65,7 @@ void core_file_destroy(CoreFile *file) {
 
 CoreTokenList *core_token_list_create() {
   CoreTokenList *list = (CoreTokenList *)malloc(sizeof(*list));
+  memset(list, 0, sizeof(*list));
   list->data = (CoreToken *)malloc(CORE_DEFAULT_TOKEN_LIST_SIZE * sizeof(*list->data));
   list->size = CORE_DEFAULT_TOKEN_LIST_SIZE;
   return list;
@@ -61,6 +74,20 @@ CoreTokenList *core_token_list_create() {
 void core_token_list_destroy(CoreTokenList *list) {
   free(list->data);
   free(list);
+}
+
+CoreToken *core_token_list_pop(CoreTokenList *list) {
+  if(list->head < list->count) {
+    return list->data + list->head++;
+  }
+  return 0;
+}
+
+CoreToken *core_token_list_top(CoreTokenList *list) {
+  if(list->head < list->count) {
+    return list->data + list->head;
+  }
+  return 0;
 }
 
 void core_token_list_push(CoreTokenList *list, CoreToken token) {
@@ -94,6 +121,13 @@ static void core_tokenizer_advance_while_number(CoreTokenizer *tokenizer) {
   }
 }
 
+
+static void core_tokenizer_advance_next_line(CoreTokenizer *tokenizer) {
+  while(*tokenizer->end != '\n') {
+    ++tokenizer->end;
+  }
+}
+
 CoreTokenList *core_tokenize_obj_file(CoreObjCtx *ctx, CoreFile *file) {
   CoreTokenizer tokenizer;
   tokenizer.src = core_str8_from_str_and_size((char *)file->data, file->size);
@@ -123,8 +157,10 @@ CoreTokenList *core_tokenize_obj_file(CoreObjCtx *ctx, CoreFile *file) {
     } else if(core_is_number(*c) || *c == '-' || *c == '.') {
       core_tokenizer_advance_while_number(&tokenizer);
       core_tokenizer_push_token(&tokenizer, list, CORE_TOKEN_NUMBER);
+    } else if(*c == '#') { /* NOTE: the complete line is a comment */
+      core_tokenizer_advance_next_line(&tokenizer);
     }
-    /* TODO: Assert that tokenizer.end is not the null terminator '\0'*/
+    /* TODO: Assert that tokenizer.end is not the null terminator '\0' */
     core_tokenizer_advance_next_token(&tokenizer);
   }
 
@@ -136,31 +172,54 @@ void core_token_list_to_vertex_and_index_list(CoreTokenList *list, CoreObjCtx *c
   ctx->i_list = (int *)malloc(ctx->i_count * sizeof(int));
   uint64_t v_cur = 0;
   uint64_t i_cur = 0;
+  (void)v_cur;
+  (void)i_cur;
   
-  uint64_t head = 0;
-  while(head < list->count) {
-    CoreToken *token = list->data + head++;
+  CoreToken *token = 0;
+  while((token = core_token_list_pop(list))) {
     switch(token->type) {
       case CORE_TOKEN_V: {
-        printf("Token V: %.*s\n", (int)token->data.size, token->data.data);
-        token = list->data + head; 
-        while(token->type == CORE_TOKEN_NUMBER) {
-          printf("Token NUMBER: %.*s\n", (int)token->data.size, token->data.data);
-          float number = core_str8_parse_float(token->data);
-          printf("Number: %f\n", number);
-          
-          /* TODO: Make this while a toke stack make this logic a lot simpler */
-          head++;
-          token = list->data + head; 
-          printf("cur:%ld, total:%ld\n", ++v_cur, ctx->v_count);
-          /* TODO: Unfinished code */
+        assert(core_token_list_top(list)->type == CORE_TOKEN_NUMBER);
+        while(core_token_list_top(list) && core_token_list_top(list)->type == CORE_TOKEN_NUMBER) {
+          assert(v_cur <= ctx->v_count);
+          token = core_token_list_pop(list);
+          float *number = ctx->v_list + v_cur++;
+          *number = core_str8_parse_float(token->data);
         }
       } break;
       case CORE_TOKEN_F: {
-        /*printf("Token F: %.*s\n", (int)token->data.size, token->data.data);*/ 
-        (void)i_cur;
+        assert(core_token_list_top(list)->type == CORE_TOKEN_NUMBER);
+        while(core_token_list_top(list) && core_token_list_top(list)->type == CORE_TOKEN_NUMBER) {
+          assert(i_cur < ctx->i_count);
+          token = core_token_list_pop(list);
+          
+          int *number = ctx->i_list + i_cur++;
+          *number = core_str8_parse_int(token->data);
+          while(core_token_list_top(list) && core_token_list_top(list)->type == CORE_TOKEN_SLASH) { 
+            /* TODO: for now just skip other indices */
+            core_token_list_pop(list);
+            core_token_list_pop(list);
+          }
+        }
       } break;
       default: { /* TODO: Invalid code path */ } break;
     }
   }
+}
+
+CoreObjCtx *core_obj_create(const char *path) {
+  CoreObjCtx *ctx = (CoreObjCtx *)malloc(sizeof(*ctx));
+  memset(ctx, 0, sizeof(*ctx));
+  CoreFile *obj_file = core_file_create((char *)path);
+  CoreTokenList *tokens = core_tokenize_obj_file(ctx, obj_file);
+  core_token_list_to_vertex_and_index_list(tokens, ctx);
+  core_token_list_destroy(tokens);
+  core_file_destroy(obj_file);
+  return ctx;
+}
+
+void core_obj_destroy(CoreObjCtx *ctx) {
+  free(ctx->v_list);
+  free(ctx->i_list);
+  free(ctx);
 }
