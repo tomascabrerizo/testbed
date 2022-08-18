@@ -27,12 +27,22 @@ int main(void) {
     int i1 = obj->i_list[i + 1] - 1;
     int i2 = obj->i_list[i + 2] - 1;
 
-    float t0 = obj->v_list[i0];
-    float t1 = obj->v_list[i1];
-    float t2 = obj->v_list[i2];
+    float v00 = obj->v_list[i0 * 3 + 0];
+    float v01 = obj->v_list[i0 * 3 + 1];
+    float v02 = obj->v_list[i0 * 3 + 2];
+
+    float v10 = obj->v_list[i1 * 3 + 0];
+    float v11 = obj->v_list[i1 * 3 + 1];
+    float v12 = obj->v_list[i1 * 3 + 2];
+
+    float v20 = obj->v_list[i2 * 3 + 0];
+    float v21 = obj->v_list[i2 * 3 + 1];
+    float v22 = obj->v_list[i2 * 3 + 2];
     
-    printf("TRIANGLE %ld\n", i);
-    printf("t0:%f, t1:%f, t2:%f\n", t0, t1, t2);
+    printf("------- TRIANGLE --------\n");
+    printf("V0 (%f, %f, %f)\n", v00, v01, v02);
+    printf("V1 (%f, %f, %f)\n", v10, v11, v12);
+    printf("V2 (%f, %f, %f)\n", v20, v21, v22);
   }
 
   core_obj_destroy(obj);
