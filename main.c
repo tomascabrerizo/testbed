@@ -1,10 +1,10 @@
 #include <stdio.h>
-#include <stdbool.h>
 #include <unistd.h>
 
 #include "core.h"
 #include "core_obj.h"
 #include "core_math.h"
+#include "renderman.h"
 
 #define WINDOW_WIDTH 640
 #define WINDOW_HEIGHT 480
@@ -53,8 +53,14 @@ int main(void) {
   V3 b = v3(4, 5, 6);
   (void)a;
   (void)b;
-  //V3 c = v3_add(a, b);
-  //printf("x:%f, y:%f, z:%f\n", c.x, c.y, c.z);
+  V3 c = v3_add(a, b);
+  printf("x:%f, y:%f, z:%f\n", c.x, c.y, c.z);
+  
+  RManShader *shader = renderman_shader_create("test.vert", "test.frag");
+  renderman_shader_add_m4(shader, "projection", m4_perspective2(3.14f/2.0f, core_window_get_width(window)/core_window_get_height(window), 0.1f, 100.0f));
+
+  RManRenderer *render = renderman_render_create();
+  renderman_render_add_shader(render, "main", shader);
 
   bool running = true;
   while(running) {
@@ -78,9 +84,14 @@ int main(void) {
 
     glClearColor(0, 0.5, 1, 1);
     glClear(GL_COLOR_BUFFER_BIT);
+
+    renderman_render_clear(render);
+    renderman_render_draw(render);
     core_window_swap_buffers(window);
   }
   
+  renderman_shader_destroy(shader);
+  renderman_render_destroy(render);
   core_window_destroy(window);
 
   return 0;

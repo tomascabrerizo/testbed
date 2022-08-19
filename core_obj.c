@@ -1,11 +1,10 @@
-#include "core_obj.h"
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdbool.h>
 #include <assert.h>
 
+#include "core_obj.h"
+#include "core_type.h"
 
 CoreStr8 core_str8_from_cstr(const char * cstr) {
   CoreStr8 result = {(uint8_t *)cstr, strlen(cstr)};
@@ -21,7 +20,7 @@ CoreStr8 core_str8_from_str_and_size(char * str, uint64_t size) {
 int core_str8_parse_int(CoreStr8 str) {
   #define STR8_TMP_BUFFER 1024
   assert(str.size < (STR8_TMP_BUFFER - 1));
-  char buffer[STR8_TMP_BUFFER]; /* TODO: Find simpler way to parse a float */
+  static char buffer[STR8_TMP_BUFFER]; /* TODO: Find simpler way to parse a float */
   #undef STR8_TMP_BUFFER
   memcpy(buffer, str.data, str.size);
   buffer[str.size] = '\0';
@@ -32,7 +31,7 @@ int core_str8_parse_int(CoreStr8 str) {
 float core_str8_parse_float(CoreStr8 str) {
   #define STR8_TMP_BUFFER 1024
   assert(str.size < (STR8_TMP_BUFFER - 1));
-  char buffer[STR8_TMP_BUFFER]; /* TODO: Find simpler way to parse a float */
+  static char buffer[STR8_TMP_BUFFER]; /* TODO: Find simpler way to parse a float */
   #undef STR8_TMP_BUFFER
   memcpy(buffer, str.data, str.size);
   buffer[str.size] = '\0';

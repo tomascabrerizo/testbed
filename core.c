@@ -1,5 +1,4 @@
 #define CORE_INTERNAL
-#include "core.h"
 
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
@@ -8,7 +7,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdbool.h>
+
+#include "core.h"
+#include "core_gl.h"
+
 
 /* NOTE: platform specific window */
 typedef struct CoreWindow {

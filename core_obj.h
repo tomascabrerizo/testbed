@@ -1,9 +1,9 @@
 #ifndef CORE_OBJ_H
 #define CORE_OBJ_H
 
-#include <stdint.h>
 #include <string.h>
 #include <stdio.h>
+#include "core_type.h"
 
 /* TODO: Create a specefic header file for common macros and constants */
 #define CORE_KB(v) ((v)*1024LL)

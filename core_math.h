@@ -117,4 +117,15 @@ static inline M4 m4_lookat2(V3 pos, V3 target, V3 up) {
   return m4_lookat(r, up, v, target);
 }
 
+static inline M4 m4_mul(M4 a, M4 b) {
+#define RTC(r, c) a.m[r*4]*b.m[c] + a.m[r*4+1]*b.m[c+4] + a.m[r*4+2]*b.m[c+8] + a.m[r*4+3]*b.m[c+12]
+  M4 m = {{
+    RTC(0, 0), RTC(0, 1), RTC(0, 2), RTC(0, 3), 
+    RTC(1, 0), RTC(1, 1), RTC(1, 2), RTC(1, 3), 
+    RTC(2, 0), RTC(2, 1), RTC(2, 2), RTC(2, 3), 
+    RTC(3, 0), RTC(3, 1), RTC(3, 2), RTC(3, 3)}};
+#undef RTC
+  return m;
+}
+
 #endif /* CORE_MATH_H */

@@ -5,4 +5,4 @@ then
   mkdir ./build
 fi
 
-gcc -std=c99 -Wall -Wextra -Werror *.c -g -o ./build/testbed -lX11 -lGL
+gcc -std=c99 -Wall -Wextra -Werror *.c -g -o ./build/testbed -lm -lX11 -lGL
