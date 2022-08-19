@@ -1,4 +1,4 @@
-#include "platform_obj.h"
+#include "core_obj.h"
 
 #include <stdio.h>
 #include <stdlib.h>

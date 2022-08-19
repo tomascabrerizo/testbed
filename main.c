@@ -2,8 +2,9 @@
 #include <stdbool.h>
 #include <unistd.h>
 
-#include "platform.h"
-#include "platform_obj.h"
+#include "core.h"
+#include "core_obj.h"
+#include "core_math.h"
 
 #define WINDOW_WIDTH 640
 #define WINDOW_HEIGHT 480
@@ -20,7 +21,7 @@ int main(void) {
   
   printf("Vertex count:%ld\n", obj->v_count);
   printf("Indices count:%ld\n", obj->i_count);
-  
+#if 0
   uint64_t i;
   for(i = 0; i < obj->i_count; i += 3) {
     int i0 = obj->i_list[i + 0] - 1;
@@ -38,14 +39,22 @@ int main(void) {
     float v20 = obj->v_list[i2 * 3 + 0];
     float v21 = obj->v_list[i2 * 3 + 1];
     float v22 = obj->v_list[i2 * 3 + 2];
-    
     printf("------- TRIANGLE --------\n");
     printf("V0 (%f, %f, %f)\n", v00, v01, v02);
     printf("V1 (%f, %f, %f)\n", v10, v11, v12);
     printf("V2 (%f, %f, %f)\n", v20, v21, v22);
   }
+#endif
 
   core_obj_destroy(obj);
+  
+  /* NOTE: Simple math test */
+  V3 a = v3(1, 2, 3);
+  V3 b = v3(4, 5, 6);
+  (void)a;
+  (void)b;
+  //V3 c = v3_add(a, b);
+  //printf("x:%f, y:%f, z:%f\n", c.x, c.y, c.z);
 
   bool running = true;
   while(running) {

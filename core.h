@@ -1,7 +1,7 @@
-#ifndef PLATFORM_H
-#define PLATFORM_H
+#ifndef CORE_H
+#define CORE_H
 
-#include "platform_gl.h"
+#include "core_gl.h"
 
 typedef struct CoreWindow CoreWindow;
 
@@ -23,4 +23,4 @@ typedef struct CoreState {
 
 CoreState *core_state_get_state(struct CoreWindow *window);
 
-#endif /* PLATFORM_H */
+#endif /* CORE_H */

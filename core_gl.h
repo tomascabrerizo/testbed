@@ -1,5 +1,5 @@
-#ifndef PLATFORM_GL_H
-#define PLATFORM_GL_H
+#ifndef CORE_GL_H
+#define CORE_GL_H
 
 #include <GL/gl.h>
 
@@ -29,4 +29,4 @@ CORE_GL_FUNCTIONS(X)
 
 #endif
 
-#endif /* PLATFORM_GL_H */
+#endif /* CORE_GL_H */

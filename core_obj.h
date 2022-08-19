@@ -1,5 +1,5 @@
-#ifndef PLATFORM_OBJ_H
-#define PLATFORM_OBJ_H
+#ifndef CORE_OBJ_H
+#define CORE_OBJ_H
 
 #include <stdint.h>
 #include <string.h>
@@ -76,9 +76,10 @@ void core_token_list_destroy(CoreTokenList *list);
 void core_token_list_push(CoreTokenList *list, CoreToken token);
 CoreToken *core_token_list_pop(CoreTokenList *list); /* NOTE: Pops a token from the front of the list */
 CoreToken *core_token_list_top(CoreTokenList *list);
+/* TODO: Dont save tokens in al list, just push vertex and indices into strech buffers while lexing each token */
 void core_token_list_to_vertex_and_index_list(CoreTokenList *list, CoreObjCtx *ctx);
 
 CoreObjCtx *core_obj_create(const char *path);
 void core_obj_destroy(CoreObjCtx *ctx);
 
-#endif /* PLATFORM_OBJ_H */
+#endif /* CORE_OBJ_H */
