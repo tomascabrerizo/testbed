@@ -51,6 +51,7 @@ static inline uint64_t core_hash64(const void *key, int len, unsigned int seed) 
 #define CORE_MAP_ENTRY_EMPTY 0
 #define CORE_MAP_ENTRY_TOMBSTONE 1 /* TODO: Acully write the code to remove items */
 
+/* TODO: Make this hash table be able to delete things */
 typedef struct CoreMapEntry {
   void *key;
   void *value;

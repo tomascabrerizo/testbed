@@ -4,6 +4,7 @@
 #include "core.h"
 #include "core_obj.h"
 #include "core_math.h"
+#include "core_hash.h"
 #include "renderman.h"
 
 #define WINDOW_WIDTH 640
@@ -11,57 +12,37 @@
 
 int main(void) {
   CoreWindow *window = core_window_create("TestBed", WINDOW_WIDTH, WINDOW_HEIGHT);
- 
-  /* NOTE: OpenGL 3.3 test code */
-  glViewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
-  unsigned int vbo;
-  glGenBuffers(1, &vbo);
-  
+
+#if 0
   CoreObjCtx *obj = core_obj_create("teapot.obj");
-  
   printf("Vertex count:%ld\n", obj->v_count);
   printf("Indices count:%ld\n", obj->i_count);
-#if 0
-  uint64_t i;
-  for(i = 0; i < obj->i_count; i += 3) {
-    int i0 = obj->i_list[i + 0] - 1;
-    int i1 = obj->i_list[i + 1] - 1;
-    int i2 = obj->i_list[i + 2] - 1;
-
-    float v00 = obj->v_list[i0 * 3 + 0];
-    float v01 = obj->v_list[i0 * 3 + 1];
-    float v02 = obj->v_list[i0 * 3 + 2];
-
-    float v10 = obj->v_list[i1 * 3 + 0];
-    float v11 = obj->v_list[i1 * 3 + 1];
-    float v12 = obj->v_list[i1 * 3 + 2];
-
-    float v20 = obj->v_list[i2 * 3 + 0];
-    float v21 = obj->v_list[i2 * 3 + 1];
-    float v22 = obj->v_list[i2 * 3 + 2];
-    printf("------- TRIANGLE --------\n");
-    printf("V0 (%f, %f, %f)\n", v00, v01, v02);
-    printf("V1 (%f, %f, %f)\n", v10, v11, v12);
-    printf("V2 (%f, %f, %f)\n", v20, v21, v22);
-  }
-#endif
-
   core_obj_destroy(obj);
+#endif
   
-  /* NOTE: Simple math test */
-  V3 a = v3(1, 2, 3);
-  V3 b = v3(4, 5, 6);
-  (void)a;
-  (void)b;
-  V3 c = v3_add(a, b);
-  printf("x:%f, y:%f, z:%f\n", c.x, c.y, c.z);
+  /* NOTE: Hash map test */
+  int keys[5]; /* NOTE: testing keys */
+  CoreMap *map = core_map_create();
+  core_map_add(map, (void *)&keys[0], (void *)123);
+  core_map_add(map, (void *)&keys[1], (void *)1);
+  core_map_add(map, (void *)&keys[2], (void *)"manuel");
+  core_map_add(map, (void *)&keys[3], (void *)321);
+  core_map_add(map, (void *)&keys[4], (void *)"tomi");
   
+  char *tomi = core_map_get(map, &keys[4]);
+  printf("%s\n", tomi);
+  int _123 = (int)(uint64_t)core_map_get(map, &keys[0]);
+  printf("%d\n", _123);
+
+  core_map_destroy(map);
+
+
   RManShader *shader = renderman_shader_create("test.vert", "test.frag");
   renderman_shader_add_m4(shader, "projection", m4_perspective2(3.14f/2.0f, core_window_get_width(window)/core_window_get_height(window), 0.1f, 100.0f));
 
   RManRenderer *render = renderman_render_create();
   renderman_render_add_shader(render, "main", shader);
-
+  
   bool running = true;
   while(running) {
 
