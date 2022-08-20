@@ -64,19 +64,6 @@ typedef struct CoreMap {
   uint64_t capacity;
 } CoreMap;
 
-/* TODO: Move this functions to core.h file */
-#define CORE_MAX(a, b) ((a) >= (b)) ? (a) : (b)
-#define CORE_IS_POWER_OF_TWO(x) ((x) != 0 && (((x) & ((x)-1)) == 0))
-static inline uint64_t core_next_power_of_two(uint64_t n) {
-  uint64_t z = 1;
-  while(z <= n) z <<= 1;
-  return z;
-}
-static inline uint64_t core_prev_power_of_two(uint64_t n) {
-  uint64_t z = 1;
-  while(z <= n) z <<= 1;
-  return z >> 1;
-}
 
 CoreMap *core_map_create(void);
 void core_map_destroy(CoreMap *map);

@@ -16,8 +16,6 @@ void core_map_destroy(CoreMap *map) {
 }
 
 static void core_map_grow(CoreMap *map, uint64_t size) {
- printf("--------GROW-START--------------\n");
-  printf("new_size: %ld\n", size);
   uint64_t alloc_size = size * sizeof(CoreMapEntry);
   CoreMapEntry *new_entries = (CoreMapEntry *)malloc(alloc_size);
   memset(new_entries, 0, alloc_size);
@@ -31,37 +29,26 @@ static void core_map_grow(CoreMap *map, uint64_t size) {
   if(map->entries) free(map->entries);
   map->entries = new_entries;
   map->capacity = size;
- printf("--------GROW-END--------------\n");
 }
-
 
 void core_map_add_hash(CoreMap *map, void *key, void *value, uint64_t hash) {
   assert(map);
   assert(key); /* NOTE: 0 key is use as empty slot */
-  printf("capacity: %ld\n", map->capacity);
-  printf("size: %ld\n", map->size);
-  printf("entries: %ld\n", (uint64_t)map->entries);
   if((float)map->size >= (float)map->capacity*0.6f) {
-    core_map_grow(map, CORE_MAX(2, map->capacity*2));
+    core_map_grow(map, CORE_MAX(16, map->capacity*2));
   }
   assert(CORE_IS_POWER_OF_TWO(map->capacity));
   uint64_t index = hash & (map->capacity-1);
-  printf("hash = %lx\n", hash);
-  printf("index = %ld\n", index);
- printf("--------search-start--------------\n");
   for(;;) {
     CoreMapEntry *entry = map->entries + index;
-    printf("index = %ld, key = %ld\n", index, (uint64_t)entry->key);
     if(entry->key == CORE_MAP_ENTRY_EMPTY) {
       entry->key = key;
       entry->value = value;
       entry->hash = hash;
       ++map->size; /* NOTE: Place for new entry found */
-      printf("--------search-end----------------\n");
       return;
     } else if(entry->key == key) {
       entry->value = value;
-      printf("--------search-end----------------\n");
       return;
     }
     ++index;
@@ -69,6 +56,7 @@ void core_map_add_hash(CoreMap *map, void *key, void *value, uint64_t hash) {
   }
 }
 
+/* TODO: This function is still not tested */
 void *core_map_get_hash(CoreMap *map, void *key, uint64_t hash) {
   assert(map);
   assert(key);
@@ -77,8 +65,8 @@ void *core_map_get_hash(CoreMap *map, void *key, uint64_t hash) {
   }
   assert(CORE_IS_POWER_OF_TWO(map->capacity));
   uint64_t index = hash & (map->capacity-1);
-  CoreMapEntry *entry = map->entries + index;
   for(;;) {
+    CoreMapEntry *entry = map->entries + index;
     if(entry->key == key) {
       return entry->value;
     } else if(entry->key == CORE_MAP_ENTRY_EMPTY) {

@@ -33,6 +33,9 @@ int main(void) {
   printf("%s\n", tomi);
   int _123 = (int)(uint64_t)core_map_get(map, &keys[0]);
   printf("%d\n", _123);
+  
+  int num = 9;
+  printf("%d, aling %d\n", num, CORE_ALING(num, 8));
 
   core_map_destroy(map);
 
