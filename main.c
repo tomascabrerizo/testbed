@@ -192,8 +192,7 @@ void render_test_update(void) {
   glBindTexture(GL_TEXTURE_2D, frame_buffer_texture);
   glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, screen_texture);
   for(int y = 0;  y < WINDOW_HEIGHT; ++y) {
-    for(int x = 0;  x < WINDOW_WIDTH; ++x) {
-      if(x >= WINDOW_WIDTH/2) {
+    for(int x = WINDOW_WIDTH/2;  x < WINDOW_WIDTH; ++x) {
         int i = y * WINDOW_WIDTH + x;
         uint8_t a = (uint8_t)((screen_texture[i] >> 24) & 0xFF);
         uint8_t b = (uint8_t)((screen_texture[i] >> 16) & 0xFF);
@@ -205,7 +204,6 @@ void render_test_update(void) {
         b = .6f*b + .4f*(255 *sinf((y+x) * .1f));
 
         screen_texture[i] = ((uint32_t)a << 24) | ((uint32_t)b << 16) | ((uint32_t)g << 8) | (uint32_t)r;
-      }
     }
   }
   /* Copy the CPU texture on GPU texture buffer */
