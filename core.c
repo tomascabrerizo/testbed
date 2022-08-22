@@ -2,17 +2,17 @@
 
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
-/* TODO: Find a good way to not have duplicated symbols */
-#define glDrawArrays glDrawArraysOld
+
+#include "core_gl.h"
+#include "core.h"
+
+/* NOTE: Must be include below core_gl.h */
 #include <GL/glx.h>
-#undef glDrawArrays
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-#include "core.h"
-#include "core_gl.h"
 
 
 /* NOTE: platform specific window */

@@ -3,7 +3,11 @@
 
 /* TODO: Find a good way to not have duplicated symbols */
 #define glDrawArrays glDrawArraysOld
+#define glGetTexImage glGetTexGendvOld
+#define glTexSubImage2D glTexSubImage2DOld
 #include <GL/gl.h>
+#undef glGetTexImage
+#undef glTexSubImage2D
 #undef glDrawArrays
 
 /* TODO: Add GL types */
@@ -43,7 +47,9 @@
   X(void, glDisableVertexAttribArray, (GLuint	index)) \
   X(void, glDrawArrays, (GLenum	mode, GLint	first, GLsizei	count)) \
   X(void, glDeleteBuffers, (GLsizei	n, const GLuint *	buffers)) \
-  X(void, glDeleteVertexArrays, (GLsizei n, const GLuint *arrays))
+  X(void, glDeleteVertexArrays, (GLsizei n, const GLuint *arrays)) \
+  X(void, glGetTexImage, (GLenum	target, GLint	level, GLenum	format, GLenum type, GLvoid *	img)) \
+  X(void, glTexSubImage2D, (GLenum target, GLint level, GLint xoffset, GLint yoffset, GLsizei width, GLsizei height, GLenum format, GLenum type, const GLvoid *data))
 
 #define CORE_GL_PROC(name) CORE_##name##_POC
 

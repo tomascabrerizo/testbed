@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <unistd.h>
 #include <assert.h>
 
@@ -13,6 +14,7 @@
 
 unsigned int screen_vao;
 unsigned int screen_vbo;
+unsigned int screen_texture[WINDOW_WIDTH*WINDOW_HEIGHT];
 
 unsigned int vao;
 unsigned int vbo;
@@ -58,7 +60,7 @@ char *f_shader_src_fb =
   "out vec4 color;\n"
   "void main()\n"
   "{\n"
-  "   color = vec4(0.0, 1.0, 0.0, 1.0);\n"
+  "   color = vec4(1.0, 1.0, 1.0, 1.0);\n"
   "}\0";
 
 unsigned int render_program_create(char *v_src, char *f_src) {
@@ -145,10 +147,11 @@ void render_test_init(void) {
   glGenFramebuffers(1, &frame_buffer);
   glBindFramebuffer(GL_FRAMEBUFFER, frame_buffer);    
   
+  glEnable(GL_TEXTURE_2D);
   glGenTextures(1, &frame_buffer_texture);
   glBindTexture(GL_TEXTURE_2D, frame_buffer_texture);
   
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, WINDOW_WIDTH, WINDOW_HEIGHT, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, WINDOW_WIDTH, WINDOW_HEIGHT, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR); 
   glBindTexture(GL_TEXTURE_2D, 0);
@@ -179,11 +182,33 @@ void render_test_update(void) {
   
   glUseProgram(program_fb);
   
-  glClearColor(0, 0.5, 1, 1);
+  glClearColor(0.5, 0.5, 0.5, 1);
   glClear(GL_COLOR_BUFFER_BIT);
   
   glDrawArrays(GL_TRIANGLES, 0, 3);
-  /* TODO: Render scene to frame buffer */
+
+#if 1
+  /* Copy the GPU texture on CPU texture buffer */
+  glBindTexture(GL_TEXTURE_2D, frame_buffer_texture);
+  glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, screen_texture);
+  for(int y = 0;  y < WINDOW_HEIGHT; ++y) {
+    for(int x = 0;  x < WINDOW_WIDTH; ++x) {
+      int i = y * WINDOW_WIDTH + x;
+      uint8_t a = (uint8_t)((screen_texture[i] >> 24) & 0xFF);
+      uint8_t b = (uint8_t)((screen_texture[i] >> 16) & 0xFF);
+      uint8_t g = (uint8_t)((screen_texture[i] >> 8)  & 0xFF);
+      uint8_t r = (uint8_t)((screen_texture[i] >> 0)  & 0xFF);
+      
+      r = .6f*r + .4f*(255 *sinf(y * .1f));
+      g = .6f*g + .4f*(255 *cosf(x * .1f));
+      b = .6f*b + .4f*(255 *sinf((y+x) * .1f));
+
+      screen_texture[i] = ((uint32_t)a << 24) | ((uint32_t)b << 16) | ((uint32_t)g << 8) | (uint32_t)r;
+    }
+  }
+  /* Copy the CPU texture on GPU texture buffer */
+  glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, WINDOW_WIDTH, WINDOW_HEIGHT, GL_RGBA, GL_UNSIGNED_BYTE, screen_texture);
+#endif
   
   /* -------------SECOND RENDER PASS--------------------*/
   glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -196,13 +221,10 @@ void render_test_update(void) {
   glClearColor(0.5, 0.5, .5, 1);
   glClear(GL_COLOR_BUFFER_BIT);
 
-
   glDrawArrays(GL_TRIANGLES, 0, 6);
-  /* TODO: Render frame buffer texture to the screen */
 }
 
 void render_test_shutdown(void) {
-
   glDeleteBuffers(1, &vbo);
   glDeleteBuffers(1, &screen_vbo);
 
