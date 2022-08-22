@@ -1,13 +1,19 @@
 #ifndef CORE_GL_H
 #define CORE_GL_H
 
+/* TODO: Find a good way to not have duplicated symbols */
+#define glDrawArrays glDrawArraysOld
 #include <GL/gl.h>
+#undef glDrawArrays
+
+/* TODO: Add GL types */
 
 #define CORE_GL_FUNCTIONS(X) \
   X(void, glGenVertexArrays, (GLsizei n, GLuint *arrays)) \
   X(void, glBindVertexArray, (GLuint array)) \
   X(void, glGenBuffers, (GLsizei	n, GLuint *buffers)) \
   X(void, glBindBuffer, (GLenum target, GLuint buffer)) \
+  X(void, glBufferData, (GLenum	target, GLsizeiptr	size, const GLvoid *data, GLenum	usage)) \
   X(void, glGenFramebuffers, (GLsizei n, GLuint *ids)) \
   X(void, glBindFramebuffer, (GLenum target, GLuint framebuffer)) \
   X(void, glFramebufferTexture2D, (GLenum target, GLenum attachment, GLenum textarget, GLuint texture, GLint level)) \
@@ -32,6 +38,12 @@
   X(void, glDeleteShader, (GLuint shader)) \
   X(void, glDeleteProgram, (GLuint program)) \
   X(void, glUseProgram, (GLuint program)) \
+  X(void, glVertexAttribPointer, (GLuint	index, GLint	size, GLenum	type, GLboolean	normalized, GLsizei	stride, const GLvoid *pointer)) \
+  X(void, glEnableVertexAttribArray, (GLuint	index)) \
+  X(void, glDisableVertexAttribArray, (GLuint	index)) \
+  X(void, glDrawArrays, (GLenum	mode, GLint	first, GLsizei	count)) \
+  X(void, glDeleteBuffers, (GLsizei	n, const GLuint *	buffers)) \
+  X(void, glDeleteVertexArrays, (GLsizei n, const GLuint *arrays))
 
 #define CORE_GL_PROC(name) CORE_##name##_POC
 

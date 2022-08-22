@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <unistd.h>
+#include <assert.h>
 
 #include "core.h"
 #include "core_obj.h"
@@ -9,6 +10,9 @@
 
 #define WINDOW_WIDTH 640
 #define WINDOW_HEIGHT 480
+
+unsigned int screen_vao;
+unsigned int screen_vbo;
 
 unsigned int vao;
 unsigned int vbo;
@@ -22,18 +26,31 @@ unsigned int program_fb;
 
 char *v_shader_src = 
   "#version 330 core\n"
-  "layout (location = 0) in vec3 aPos;\n"
+  "layout (location = 0) in vec2 aPos;\n"
+  "layout (location = 1) in vec2 aTex;\n"
+  "out vec2 tex;\n"
   "void main()\n"
   "{\n"
-  "   gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);\n"
+  "   gl_Position = vec4(aPos.x, aPos.y, 0.0, 1.0);\n"
+  "   tex = aTex;\n"
   "}\0";
 
 char *f_shader_src = 
   "#version 330 core\n"
+  "in vec2 tex;\n"
   "out vec4 color;\n"
+  "uniform sampler2D uScreen;\n"
   "void main()\n"
   "{\n"
-  "   color = vec4(1.0, 0.0, 0.0, 1.0);\n"
+  "   color = texture(uScreen, tex);\n"
+  "}\0";
+
+char *v_shader_src_fb = 
+  "#version 330 core\n"
+  "layout (location = 0) in vec3 aPos;\n"
+  "void main()\n"
+  "{\n"
+  "   gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);\n"
   "}\0";
 
 char *f_shader_src_fb = 
@@ -83,6 +100,16 @@ unsigned int render_program_create(char *v_src, char *f_src) {
 
 }
 
+float quad[] = {
+  /* V        T */
+  -1,  1,   0, 1,
+  -1, -1,   0, 0,
+   1,  1,   1, 1,
+   1,  1,   1, 1,
+  -1, -1,   0, 0,
+   1, -1,   1, 0
+};
+
 float vertices[] = {
     -0.5f, -0.5f, 0.0f,
      0.5f, -0.5f, 0.0f,
@@ -90,9 +117,29 @@ float vertices[] = {
 }; 
 
 void render_test_init(void) {
+  /* ----------- Create default screen buffer data ------------- */
+  glGenVertexArrays(1, &screen_vao); 
+  glBindVertexArray(screen_vao);
+  glGenBuffers(1, &screen_vbo);
+  glBindBuffer(GL_ARRAY_BUFFER, screen_vbo);
+  glBufferData(GL_ARRAY_BUFFER, sizeof(quad), quad, GL_STATIC_DRAW);
+  glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(float)*4, (const void *)0);
+  glEnableVertexAttribArray(0);
+  glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(float)*4, (const void *)(sizeof(float)*2));
+  glEnableVertexAttribArray(1);
+
+  /* ----------- Create framebuffer buffer data ------------- */
+  glGenVertexArrays(1, &vao); 
+  glBindVertexArray(vao);
+  glGenBuffers(1, &vbo);
+  glBindBuffer(GL_ARRAY_BUFFER, vbo);
+  glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (const void *)0);
+  glEnableVertexAttribArray(0);
+
   /* TODO: ------- Copile default and frame buffer sahders ----------*/
   program = render_program_create(v_shader_src, f_shader_src);
-  program_fb = render_program_create(v_shader_src, f_shader_src_fb);
+  program_fb = render_program_create(v_shader_src_fb, f_shader_src_fb);
 
   /* ------ Create frame buffer to render -------- */
   glGenFramebuffers(1, &frame_buffer);
@@ -124,24 +171,49 @@ void render_test_init(void) {
 }
 
 void render_test_update(void) {
+  /* -------------FIRST RENDER PASS--------------------*/
   glBindFramebuffer(GL_FRAMEBUFFER, frame_buffer);
+
+  glBindVertexArray(vao);
+  glBindBuffer(GL_ARRAY_BUFFER, vbo);
+  
   glUseProgram(program_fb);
+  
   glClearColor(0, 0.5, 1, 1);
   glClear(GL_COLOR_BUFFER_BIT);
+  
+  glDrawArrays(GL_TRIANGLES, 0, 3);
   /* TODO: Render scene to frame buffer */
   
-
+  /* -------------SECOND RENDER PASS--------------------*/
   glBindFramebuffer(GL_FRAMEBUFFER, 0);
+  
+  glBindVertexArray(screen_vao);
+  glBindBuffer(GL_ARRAY_BUFFER, 0);
+  glBindTexture(GL_TEXTURE_2D, frame_buffer_texture);
   glUseProgram(program);
+  
   glClearColor(0.5, 0.5, .5, 1);
   glClear(GL_COLOR_BUFFER_BIT);
+
+
+  glDrawArrays(GL_TRIANGLES, 0, 6);
   /* TODO: Render frame buffer texture to the screen */
 }
 
 void render_test_shutdown(void) {
+
+  glDeleteBuffers(1, &vbo);
+  glDeleteBuffers(1, &screen_vbo);
+
+  glDeleteVertexArrays(1, &vao);
+  glDeleteVertexArrays(1, &screen_vao);
+
   glDeleteProgram(program);
   glDeleteProgram(program_fb);
+
   glDeleteTextures(1, &frame_buffer_texture);
+  
   glDeleteRenderbuffers(1, &render_buffer);
   glDeleteFramebuffers(1, &frame_buffer);
 }

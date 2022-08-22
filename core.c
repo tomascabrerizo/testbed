@@ -2,7 +2,10 @@
 
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
+/* TODO: Find a good way to not have duplicated symbols */
+#define glDrawArrays glDrawArraysOld
 #include <GL/glx.h>
+#undef glDrawArrays
 
 #include <stdio.h>
 #include <stdlib.h>
