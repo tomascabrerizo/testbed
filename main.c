@@ -10,45 +10,150 @@
 #define WINDOW_WIDTH 640
 #define WINDOW_HEIGHT 480
 
+unsigned int vao;
+unsigned int vbo;
+
+unsigned int frame_buffer;
+unsigned int frame_buffer_texture;
+unsigned int render_buffer;
+
+unsigned int program;
+unsigned int program_fb;
+
+char *v_shader_src = 
+  "#version 330 core\n"
+  "layout (location = 0) in vec3 aPos;\n"
+  "void main()\n"
+  "{\n"
+  "   gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);\n"
+  "}\0";
+
+char *f_shader_src = 
+  "#version 330 core\n"
+  "out vec4 color;\n"
+  "void main()\n"
+  "{\n"
+  "   color = vec4(1.0, 0.0, 0.0, 1.0);\n"
+  "}\0";
+
+char *f_shader_src_fb = 
+  "#version 330 core\n"
+  "out vec4 color;\n"
+  "void main()\n"
+  "{\n"
+  "   color = vec4(0.0, 1.0, 0.0, 1.0);\n"
+  "}\0";
+
+unsigned int render_program_create(char *v_src, char *f_src) {
+  int success;
+  static char infoLog[512];
+  
+  unsigned int v_shader = glCreateShader(GL_VERTEX_SHADER);
+  glShaderSource(v_shader, 1, (const char **)&v_src, NULL);
+  glCompileShader(v_shader);
+  glGetShaderiv(v_shader, GL_COMPILE_STATUS, &success);
+  if (!success) {
+    glGetShaderInfoLog(v_shader, 512, NULL, infoLog);
+    printf("[VERTEX SHADER ERROR]: %s\n", infoLog);
+  }
+
+  unsigned int f_shader = glCreateShader(GL_FRAGMENT_SHADER);
+  glShaderSource(f_shader, 1, (const char **)&f_src, NULL);
+  glCompileShader(f_shader);
+  glGetShaderiv(f_shader, GL_COMPILE_STATUS, &success);
+  if (!success) {
+    glGetShaderInfoLog(f_shader, 512, NULL, infoLog);
+    printf("[FRAGMENT SHADER ERROR]: %s\n", infoLog);
+  }
+
+  unsigned int program = glCreateProgram();
+  glAttachShader(program, v_shader);
+  glAttachShader(program, f_shader);
+  glLinkProgram(program);
+  glGetProgramiv(program, GL_LINK_STATUS, &success);
+  if (!success) {
+    glGetProgramInfoLog(program, 512, NULL, infoLog);
+    printf("[SHADER PROGRAM ERROR]: %s\n", infoLog);
+  }
+  
+  glDeleteShader(v_shader);
+  glDeleteShader(f_shader);
+  
+  return program;
+
+}
+
+float vertices[] = {
+    -0.5f, -0.5f, 0.0f,
+     0.5f, -0.5f, 0.0f,
+     0.0f,  0.5f, 0.0f
+}; 
+
+void render_test_init(void) {
+  /* TODO: ------- Copile default and frame buffer sahders ----------*/
+  program = render_program_create(v_shader_src, f_shader_src);
+  program_fb = render_program_create(v_shader_src, f_shader_src_fb);
+
+  /* ------ Create frame buffer to render -------- */
+  glGenFramebuffers(1, &frame_buffer);
+  glBindFramebuffer(GL_FRAMEBUFFER, frame_buffer);    
+  
+  glGenTextures(1, &frame_buffer_texture);
+  glBindTexture(GL_TEXTURE_2D, frame_buffer_texture);
+  
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, WINDOW_WIDTH, WINDOW_HEIGHT, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR); 
+  glBindTexture(GL_TEXTURE_2D, 0);
+
+  glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, frame_buffer_texture, 0);  
+
+  glGenRenderbuffers(1, &render_buffer);
+  glBindRenderbuffer(GL_RENDERBUFFER, render_buffer);
+  glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, WINDOW_WIDTH, WINDOW_HEIGHT);  
+  glBindRenderbuffer(GL_RENDERBUFFER, 0);
+
+  glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, render_buffer);
+
+  if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
+	  printf("Framebuffer is not complete!\n");
+  } else {
+	  printf("Framebuffer is complete!\n");
+  }
+  glBindFramebuffer(GL_FRAMEBUFFER, 0);  
+}
+
+void render_test_update(void) {
+  glBindFramebuffer(GL_FRAMEBUFFER, frame_buffer);
+  glUseProgram(program_fb);
+  glClearColor(0, 0.5, 1, 1);
+  glClear(GL_COLOR_BUFFER_BIT);
+  /* TODO: Render scene to frame buffer */
+  
+
+  glBindFramebuffer(GL_FRAMEBUFFER, 0);
+  glUseProgram(program);
+  glClearColor(0.5, 0.5, .5, 1);
+  glClear(GL_COLOR_BUFFER_BIT);
+  /* TODO: Render frame buffer texture to the screen */
+}
+
+void render_test_shutdown(void) {
+  glDeleteProgram(program);
+  glDeleteProgram(program_fb);
+  glDeleteTextures(1, &frame_buffer_texture);
+  glDeleteRenderbuffers(1, &render_buffer);
+  glDeleteFramebuffers(1, &frame_buffer);
+}
+
+
 int main(void) {
   CoreWindow *window = core_window_create("TestBed", WINDOW_WIDTH, WINDOW_HEIGHT);
-
-#if 0
-  CoreObjCtx *obj = core_obj_create("teapot.obj");
-  printf("Vertex count:%ld\n", obj->v_count);
-  printf("Indices count:%ld\n", obj->i_count);
-  core_obj_destroy(obj);
-#endif
-  
-  /* NOTE: Hash map test */
-  int keys[5]; /* NOTE: testing keys */
-  CoreMap *map = core_map_create();
-  core_map_add(map, (void *)&keys[0], (void *)123);
-  core_map_add(map, (void *)&keys[1], (void *)1);
-  core_map_add(map, (void *)&keys[2], (void *)"manuel");
-  core_map_add(map, (void *)&keys[3], (void *)321);
-  core_map_add(map, (void *)&keys[4], (void *)"tomi");
-  
-  char *tomi = core_map_get(map, &keys[4]);
-  printf("%s\n", tomi);
-  int _123 = (int)(uint64_t)core_map_get(map, &keys[0]);
-  printf("%d\n", _123);
-  
-  int num = 9;
-  printf("%d, aling %d\n", num, CORE_ALING(num, 8));
-
-  core_map_destroy(map);
-
-
-  RManShader *shader = renderman_shader_create("test.vert", "test.frag");
-  renderman_shader_add_m4(shader, "projection", m4_perspective2(3.14f/2.0f, core_window_get_width(window)/core_window_get_height(window), 0.1f, 100.0f));
-
-  RManRenderer *render = renderman_render_create();
-  renderman_render_add_shader(render, "main", shader);
   
   bool running = true;
-  while(running) {
 
+  render_test_init();
+  while(running) {
     CoreState *state = core_state_get_state(window);
     if(state->quit) {
       printf("Quitting application\n");
@@ -60,22 +165,11 @@ int main(void) {
       glViewport(0, 0, state->width, state->height);
     }
 
-    /* TODO: Implements inplement keyboard and mouse input
-     * Something like this:
-    if(core_state_key_down(state, CORE_K_A)) {
-    }
-    */
-
-    glClearColor(0, 0.5, 1, 1);
-    glClear(GL_COLOR_BUFFER_BIT);
-
-    renderman_render_clear(render);
-    renderman_render_draw(render);
+    render_test_update();
     core_window_swap_buffers(window);
   }
   
-  renderman_shader_destroy(shader);
-  renderman_render_destroy(render);
+  render_test_shutdown();
   core_window_destroy(window);
 
   return 0;

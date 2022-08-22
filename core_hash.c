@@ -12,6 +12,7 @@ CoreMap *core_map_create(void) {
 }
 
 void core_map_destroy(CoreMap *map) {
+  if(map->entries) free(map->entries);
   free(map);
 }
 
@@ -52,7 +53,8 @@ void core_map_add_hash(CoreMap *map, void *key, void *value, uint64_t hash) {
       return;
     }
     ++index;
-    if(index >= map->capacity) index = 0;
+    index = index & (map->capacity - 1);
+    /*if(index >= map->capacity) index = 0;*/
   }
 }
 
@@ -73,7 +75,8 @@ void *core_map_get_hash(CoreMap *map, void *key, uint64_t hash) {
       return 0;
     }
     ++index;
-    if(index >= map->capacity) index = 0;
+    index = index & (map->capacity - 1);
+    /*if(index >= map->capacity) index = 0;*/
   }
 }
 

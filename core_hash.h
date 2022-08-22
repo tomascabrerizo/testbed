@@ -5,7 +5,7 @@
 
 /* NOTE: Mumur hash function https://sites.google.com/site/murmurhash/ */
 static inline uint64_t core_hash64(const void *key, int len, unsigned int seed) {
-	const uint64_t m = 0xc6a4a7935bd1e995;
+	const uint64_t m = 0xc6a4a7935bd1e995ull;
 	const int r = 47;
 	uint64_t h = seed ^ (len * m);
 	const uint64_t * data = (const uint64_t *)key;
