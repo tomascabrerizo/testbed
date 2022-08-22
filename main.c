@@ -168,7 +168,7 @@ void render_test_init(void) {
   if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
 	  printf("Framebuffer is not complete!\n");
   } else {
-	  printf("Framebuffer is complete!\n");
+	  printf("Framebuffer enable\n");
   }
   glBindFramebuffer(GL_FRAMEBUFFER, 0);  
 }
@@ -193,17 +193,19 @@ void render_test_update(void) {
   glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, screen_texture);
   for(int y = 0;  y < WINDOW_HEIGHT; ++y) {
     for(int x = 0;  x < WINDOW_WIDTH; ++x) {
-      int i = y * WINDOW_WIDTH + x;
-      uint8_t a = (uint8_t)((screen_texture[i] >> 24) & 0xFF);
-      uint8_t b = (uint8_t)((screen_texture[i] >> 16) & 0xFF);
-      uint8_t g = (uint8_t)((screen_texture[i] >> 8)  & 0xFF);
-      uint8_t r = (uint8_t)((screen_texture[i] >> 0)  & 0xFF);
-      
-      r = .6f*r + .4f*(255 *sinf(y * .1f));
-      g = .6f*g + .4f*(255 *cosf(x * .1f));
-      b = .6f*b + .4f*(255 *sinf((y+x) * .1f));
+      if(x >= WINDOW_WIDTH/2) {
+        int i = y * WINDOW_WIDTH + x;
+        uint8_t a = (uint8_t)((screen_texture[i] >> 24) & 0xFF);
+        uint8_t b = (uint8_t)((screen_texture[i] >> 16) & 0xFF);
+        uint8_t g = (uint8_t)((screen_texture[i] >> 8)  & 0xFF);
+        uint8_t r = (uint8_t)((screen_texture[i] >> 0)  & 0xFF);
+        
+        r = .6f*r + .4f*(255 *sinf(y * .1f));
+        g = .6f*g + .4f*(255 *cosf(x * .1f));
+        b = .6f*b + .4f*(255 *sinf((y+x) * .1f));
 
-      screen_texture[i] = ((uint32_t)a << 24) | ((uint32_t)b << 16) | ((uint32_t)g << 8) | (uint32_t)r;
+        screen_texture[i] = ((uint32_t)a << 24) | ((uint32_t)b << 16) | ((uint32_t)g << 8) | (uint32_t)r;
+      }
     }
   }
   /* Copy the CPU texture on GPU texture buffer */
