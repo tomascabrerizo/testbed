@@ -3,6 +3,12 @@
 
 #include <math.h>
 
+#define CORE_PI 3.14159265359f
+
+static inline float to_rad(float a) {
+  return a * CORE_PI / 180.0f;
+}
+
 typedef struct V3 {
   float x;
   float y;
@@ -68,6 +74,56 @@ static inline M4 m4_identity() {
   return m; 
 }
 
+static inline M4 m4_translate(V3 t) {
+  M4 m = (M4){{1, 0, 0, t.x, 
+               0, 1, 0, t.y,
+               0, 0, 1, t.z,
+               0, 0, 0, 1}};
+  return m; 
+}
+
+static inline M4 m4_scale(float s) {
+  M4 m = (M4){{s, 0, 0, 0, 
+               0, s, 0, 0,
+               0, 0, s, 0,
+               0, 0, 0, 1}};
+  return m; 
+}
+
+static inline M4 m4_rotate_x(float r) {
+    float s = sinf(r);
+    float c = cosf(r);
+    M4 m = {{
+        1,  0,  0,  0,
+        0,  c, -s,  0,
+        0,  s,  c,  0,
+        0,  0,  0,  1}};
+    return m;
+}
+
+static inline M4 m4_rotate_y(float r) {
+    float s = sinf(r);
+    float c = cosf(r);
+    M4 m = {{
+        c,  0,  s,  0,
+        0,  1,  0,  0,
+       -s,  0,  c,  0,
+        0,  0,  0,  1}};
+    return m;
+}
+
+static inline M4 m4_rotate_z(float r) {
+    float s = sinf(r);
+    float c = cosf(r);
+    M4 m = {{
+         c, -s,  0,  0,
+         s,  c,  0,  0,
+         0,  0,  1,  0,
+         0,  0,  0,  1}};
+    return m;
+}
+
+
 static inline M4 m4_ortho(float l, float r, float t, float b, float n, float f) {
   float rml = 1.0f / (r - l);
   float tmb = 1.0f / (t - b);
@@ -95,10 +151,15 @@ static inline M4 m4_perspective(float l, float r, float t, float b, float n, flo
 }
 
 static inline M4 m4_perspective2(float fov, float aspect, float n, float f) {
-    // float ymax = n * tanf(fov * 3.14159265359f / 360.0f);
-    float ymax = n * tanf(fov * 0.5f);
-    float xmax = ymax * aspect;
-    return m4_perspective(-xmax, xmax, -ymax, ymax, n, f);
+    float c = 1.0f / tanf(fov/2);
+    float fmn = f - n;
+    float fpn = f + n;
+    M4 result = {{
+        c/aspect, 0,               0,   0,
+        0,        c,               0,   0,
+        0,        0,    -(fpn / fmn),   -((2*n*f) / fmn),
+        0,        0,              -1,   0}};
+    return result;
 }
 
 static inline M4 m4_lookat(V3 r, V3 u, V3 v, V3 t) {
@@ -111,10 +172,12 @@ static inline M4 m4_lookat(V3 r, V3 u, V3 v, V3 t) {
 }
 
 static inline M4 m4_lookat2(V3 pos, V3 target, V3 up) {
-  /* TODO: Test this code culd be wrong */
-  V3 v = v3_normalize(v3_sub(target, pos));
-  V3 r = v3_normalize(v3_cross(up, v));
-  return m4_lookat(r, up, v, target);
+  /* NOTE: Camera basis verctor */
+  V3 dir = v3_sub(target, pos);
+  V3 v = v3_normalize(v3_neg(dir));
+  V3 u = v3_sub(up, v3_scale(v, v3_dot(up, v)));
+  V3 r = v3_cross(u, v);
+  return m4_lookat(r, u, v, pos);
 }
 
 static inline M4 m4_mul(M4 a, M4 b) {
@@ -126,6 +189,16 @@ static inline M4 m4_mul(M4 a, M4 b) {
     RTC(3, 0), RTC(3, 1), RTC(3, 2), RTC(3, 3)}};
 #undef RTC
   return m;
+}
+
+/* TODO: remove stdio.h from this file */
+#include <stdio.h>
+
+static inline void m4_print(M4 m) {
+  for(int j = 0; j < 4; ++j) {
+    printf("%.2f, %.2f, %.2f, %.2f\n", 
+           m.m[j*4+0], m.m[j*4+1], m.m[j*4+2], m.m[j*4+3]);
+  }
 }
 
 #endif /* CORE_MATH_H */

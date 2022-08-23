@@ -5,10 +5,16 @@
 #define glDrawArrays glDrawArraysOld
 #define glGetTexImage glGetTexGendvOld
 #define glTexSubImage2D glTexSubImage2DOld
+#define glDrawPixels glDrawPixelsOld
+#define glReadPixels glReadPixelsOld
+#define glDrawElements glDrawElementsOld
 #include <GL/gl.h>
 #undef glGetTexImage
 #undef glTexSubImage2D
 #undef glDrawArrays
+#undef glDrawPixels
+#undef glReadPixels
+#undef glDrawElements
 
 /* TODO: Add GL types */
 
@@ -49,7 +55,12 @@
   X(void, glDeleteBuffers, (GLsizei	n, const GLuint *	buffers)) \
   X(void, glDeleteVertexArrays, (GLsizei n, const GLuint *arrays)) \
   X(void, glGetTexImage, (GLenum	target, GLint	level, GLenum	format, GLenum type, GLvoid *	img)) \
-  X(void, glTexSubImage2D, (GLenum target, GLint level, GLint xoffset, GLint yoffset, GLsizei width, GLsizei height, GLenum format, GLenum type, const GLvoid *data))
+  X(void, glTexSubImage2D, (GLenum target, GLint level, GLint xoffset, GLint yoffset, GLsizei width, GLsizei height, GLenum format, GLenum type, const GLvoid *data)) \
+  X(void, glDrawPixels, (GLsizei	width, GLsizei	height, GLenum	format, GLenum	type, const GLvoid *data)) \
+  X(void, glReadPixels, (GLint x, GLint y, GLsizei width, GLsizei height, GLenum format, GLenum type, GLvoid *data)) \
+  X(void, glUniformMatrix4fv, (GLint location, GLsizei	count, GLboolean	transpose, const GLfloat *	value)) \
+  X(GLint, glGetUniformLocation, (GLuint program, const GLchar *name)) \
+  X(void, glDrawElements, (GLenum	mode, GLsizei	count, GLenum	type, const GLvoid *indices))
 
 #define CORE_GL_PROC(name) CORE_##name##_POC
 

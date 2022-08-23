@@ -4,6 +4,7 @@
 #include <string.h>
 #include <stdio.h>
 #include "core_type.h"
+#include "core_math.h"
 
 /* TODO: Create a specefic header file for common macros and constants */
 #define CORE_KB(v) ((v)*1024LL)
@@ -54,11 +55,22 @@ typedef struct CoreFile {
   uint64_t size;
 } CoreFile;
 
+typedef struct CoreVertex {
+  V3 p;
+  V3 n;
+} CoreVertex;
+
 typedef struct CoreObjCtx {
-  float *v_list;
+  CoreVertex *vertex_list;
+  
   int *i_list;
-  uint64_t v_count;
   uint64_t i_count;
+
+  float *v_list;
+  uint64_t v_count;
+  
+  float *n_list;
+  uint64_t n_count;
 } CoreObjCtx;
 
 CoreStr8 core_str8_from_cstr(const char * cstr);

@@ -214,6 +214,13 @@ CoreObjCtx *core_obj_create(const char *path) {
   core_token_list_to_vertex_and_index_list(tokens, ctx);
   core_token_list_destroy(tokens);
   core_file_destroy(obj_file);
+
+  /* TODO: Good error handle */
+  assert(ctx->v_list);
+  assert(ctx->i_list);
+  assert(ctx->v_count);
+  assert(ctx->i_count);
+
   return ctx;
 }
 
