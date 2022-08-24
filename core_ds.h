@@ -1,5 +1,5 @@
-#ifndef CORE_HASH_H
-#define CORE_HASH_H
+#ifndef CORE_DS_H
+#define CORE_DS_H
 
 #include "core_type.h"
 
@@ -117,4 +117,4 @@ static inline void core_buf_free(void *buff) {
   }
 }
 
-#endif /* CORE_HASH_H */
+#endif /* CORE_DS_H */

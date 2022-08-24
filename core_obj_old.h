@@ -1,5 +1,5 @@
-#ifndef CORE_OBJ_H
-#define CORE_OBJ_H
+#ifndef CORE_OBJ_OLD_H
+#define CORE_OBJ_OLD_H
 
 #include <string.h>
 #include <stdio.h>
@@ -97,4 +97,4 @@ void core_obj_parse_token_list(CoreObjCtx *ctx, CoreTokenList *list);
 CoreObjCtx *core_obj_create(const char *path);
 void core_obj_destroy(CoreObjCtx *ctx);
 
-#endif /* CORE_OBJ_H */
+#endif /* CORE_OBJ_OLD_H */

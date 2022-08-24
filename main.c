@@ -5,7 +5,6 @@
 #include <sys/time.h>
 
 #include "core.h"
-#include "core_obj.h"
 #include "core_math.h"
 #include "core_ds.h"
 #include "renderman.h"
@@ -32,8 +31,6 @@ unsigned int render_buffer;
 
 unsigned int program;
 unsigned int program_fb;
-
-CoreObjCtx *teapot;
 
 char *v_shader_src = 
   "#version 330 core\n"
@@ -63,17 +60,20 @@ char *v_shader_src_fb =
   "uniform mat4 uProj;\n"
   "uniform mat4 uView;\n"
   "uniform mat4 uModel;\n"
+  "out vec3 normal;\n"
   "void main()\n"
   "{\n"
   "   gl_Position = uProj * uView * uModel * vec4(aPos, 1.0);\n"
+  "   normal = aNor;\n"
   "}\0";
 
 char *f_shader_src_fb = 
   "#version 330 core\n"
   "out vec4 color;\n"
+  "in vec3 normal;\n"
   "void main()\n"
   "{\n"
-  "   color = vec4(1.0, 1.0, 1.0, 1.0);\n"
+  "   color = vec4(normal, 1.0);\n"
   "}\0";
 
 unsigned int render_program_create(char *v_src, char *f_src) {
@@ -125,9 +125,13 @@ float quad[] = {
    1, -1,   1, 0
 };
 
-void render_test_init(void) {
-  teapot = core_obj_create("teapot.obj");
+float tri[] = {       /* NOTE: we are using normals as colors */
+   0.0f,  0.5f, 0.0f, 1.0f, 0.0f, 0.0f,
+  -0.5f, -0.5f, 0.0f, 0.0f, 1.0f, 0.0f,
+   0.5f, -0.5f, 0.0f, 0.0f, 0.0f, 1.0f
+};
 
+void render_test_init(void) {
   /* ----------- Create default screen buffer data ------------- */
   glGenVertexArrays(1, &screen_vao); 
   glBindVertexArray(screen_vao);
@@ -145,30 +149,28 @@ void render_test_init(void) {
   glGenBuffers(1, &vbo);
   glBindBuffer(GL_ARRAY_BUFFER, vbo);
   
-  glBufferData(GL_ARRAY_BUFFER, teapot->vertex_count*sizeof(CoreVertex), teapot->vertex_list, GL_STATIC_DRAW);
-  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(CoreVertex), (const void *)OFFSET_OFF(CoreVertex, p));
+  glBufferData(GL_ARRAY_BUFFER, sizeof(tri), tri, GL_STATIC_DRAW);
+  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(float)*6, (const void *)0);
   glEnableVertexAttribArray(0);
-  glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(CoreVertex), (const void *)OFFSET_OFF(CoreVertex, n));
+  glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(float)*6, (const void *)(sizeof(float)*3));
   glEnableVertexAttribArray(1);
 
   /* TODO: ------- Copile default and frame buffer sahders ----------*/
   program = render_program_create(v_shader_src, f_shader_src);
   program_fb = render_program_create(v_shader_src_fb, f_shader_src_fb);
-#if 1 
   glUseProgram(program_fb);
+
   M4 proj = m4_perspective2(to_rad(60), (float)WINDOW_WIDTH/(float)WINDOW_HEIGHT, 0.1f, 100.0f);
   int proj_loc = glGetUniformLocation(program_fb, "uProj");
   glUniformMatrix4fv(proj_loc, 1, GL_TRUE, proj.m);
 
-  M4 view = m4_lookat2(v3(0, 5, 4), v3(0, 0, 0), v3(0, 1, 0));
+  M4 view = m4_lookat2(v3(0, 0, 4), v3(0, 0, 0), v3(0, 1, 0));
   int view_loc = glGetUniformLocation(program_fb, "uView");
   glUniformMatrix4fv(view_loc, 1, GL_TRUE, view.m);
   
-  M4 model = m4_mul(m4_translate(v3(0, 0, 0)), m4_mul(m4_rotate_y(to_rad(90)), m4_scale(1)));
+  M4 model = m4_mul(m4_translate(v3(0, 0, 0)), m4_mul(m4_rotate_y(to_rad(0)), m4_scale(4)));
   int model_loc = glGetUniformLocation(program_fb, "uModel");
   glUniformMatrix4fv(model_loc, 1, GL_TRUE, model.m);
-
-#endif
 
   /* ------ Create frame buffer to render -------- */
   glGenFramebuffers(1, &frame_buffer);
@@ -212,7 +214,7 @@ void render_test_update(void) {
   glClearColor(0, 0, 0, 1);
   glClear(GL_COLOR_BUFFER_BIT);
   
-  glDrawArrays(GL_TRIANGLES, 0, teapot->v_count);
+  glDrawArrays(GL_TRIANGLES, 0, 3);
 
   /* TODO: This code path is not working (search how glDrawPixels shoud be use) */
 #if 0
@@ -294,8 +296,6 @@ void render_test_shutdown(void) {
   
   glDeleteRenderbuffers(1, &render_buffer);
   glDeleteFramebuffers(1, &frame_buffer);
-
-  core_obj_destroy(teapot);
 }
 
 int main(void) {
