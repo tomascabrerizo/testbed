@@ -5,7 +5,10 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include <assert.h>
 
+#undef NULL
+#define NULL ((void *)0)
 #define internal static
 
 #define OFFSET_OFF(struct, x) ((unsigned long long)(&(((struct *)(0))->x)))

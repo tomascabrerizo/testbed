@@ -74,4 +74,44 @@ void *core_map_get(CoreMap *map, void *key);
 void core_map_add_hash(CoreMap *map, void *key, void *value, uint64_t hash);
 void *core_map_get_hash(CoreMap *map, void *key, uint64_t hash);
 
+/* NOTE: Streched buffers (c dynamic array) */
+/* TODO: This buffer are not tested yet */
+typedef struct CoreBuffHeader {
+  uint64_t size;
+  uint64_t cap;
+} CoreBuffHeader;
+
+#define CORE_BUFFER_DEFAULT_CAP 8
+
+#define core_buf_header(buf) (((CoreBuffHeader *)(buf))-1)
+#define core_buf_size(buf) ((buf) ? core_buf_header((buf))->size : 0)
+#define core_buf_cap(buf) ((buf) ? core_buf_header((buf))->cap : 0)
+#define core_buf_fit(buf) (((core_buf_size((buf))+1) > core_buf_cap((buf))) ? (buf) = core_buf_grow(core_buf_header((buff)), sizeof(*(buf))) : 0)
+#define core_buf_push(buf, value) (core_buf_fit(buf), (buf)[core_buf_size((buf))++] = value)
+
+/* TODO: Remove stdlib.h from the header file */
+#include <stdlib.h>
+
+static inline void *core_buf_grow(void *buff, uint64_t element_size) {
+  if(buff == NULL) {
+    CoreBuffHeader *header = (CoreBuffHeader *)malloc(sizeof(CoreBuffHeader) + (CORE_BUFFER_DEFAULT_CAP*sizeof(element_size)));
+    header->size = 0;
+    header->cap = CORE_BUFFER_DEFAULT_CAP; 
+    return (void *)(header + 1);
+  } else {
+    CoreBuffHeader *header = core_buf_header(buff);
+    assert(header->cap  > 0);
+    assert(header->size > 0);
+    header->cap = header->cap * 2;
+    header = realloc(header, sizeof(CoreBuffHeader) + header->size*sizeof(element_size));
+    return (void *)(header + 1);
+  }
+}
+
+static inline void core_buf_free(void *buff) {
+  if(buff != NULL) {
+    free(core_buf_header(buff));
+  }
+}
+
 #endif /* CORE_HASH_H */
