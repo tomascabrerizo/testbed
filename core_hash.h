@@ -84,26 +84,29 @@ typedef struct CoreBuffHeader {
 #define CORE_BUFFER_DEFAULT_CAP 8
 
 #define core_buf_header(buf) (((CoreBuffHeader *)(buf))-1)
-#define core_buf_size(buf) ((buf) ? core_buf_header((buf))->size : 0)
-#define core_buf_cap(buf) ((buf) ? core_buf_header((buf))->cap : 0)
-#define core_buf_fit(buf) (((core_buf_size((buf))+1) > core_buf_cap((buf))) ? (buf) = core_buf_grow(core_buf_header((buff)), sizeof(*(buf))) : 0)
-#define core_buf_push(buf, value) (core_buf_fit(buf), (buf)[core_buf_size((buf))++] = value)
+#define core_buf_size(buf) ((buf != NULL) ? core_buf_header((buf))->size : 0)
+#define core_buf_cap(buf) ((buf != NULL) ? core_buf_header((buf))->cap : 0)
+#define core_buf_fit(buf) (((core_buf_size((buf))+1) > core_buf_cap((buf))) ? (buf) = core_buf_grow((buf), sizeof(*(buf))) : 0)
+#define core_buf_push(buf, value) (core_buf_fit(buf), (buf)[core_buf_header((buf))->size++] = value)
 
 /* TODO: Remove stdlib.h from the header file */
 #include <stdlib.h>
+#include <stdio.h>
 
 static inline void *core_buf_grow(void *buff, uint64_t element_size) {
   if(buff == NULL) {
     CoreBuffHeader *header = (CoreBuffHeader *)malloc(sizeof(CoreBuffHeader) + (CORE_BUFFER_DEFAULT_CAP*sizeof(element_size)));
     header->size = 0;
     header->cap = CORE_BUFFER_DEFAULT_CAP; 
+    assert(header->cap > header->size);
+    printf("init streched buffer\n");
     return (void *)(header + 1);
   } else {
     CoreBuffHeader *header = core_buf_header(buff);
-    assert(header->cap  > 0);
-    assert(header->size > 0);
     header->cap = header->cap * 2;
     header = realloc(header, sizeof(CoreBuffHeader) + header->size*sizeof(element_size));
+    assert(header->cap > header->size);
+    printf("streched buffer grow\n");
     return (void *)(header + 1);
   }
 }

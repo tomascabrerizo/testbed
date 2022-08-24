@@ -299,6 +299,23 @@ void render_test_shutdown(void) {
 }
 
 int main(void) {
+
+  /* NOTE: Dynamic buff test */
+  int *buffer = 0;
+  core_buf_push(buffer, 1);
+  core_buf_push(buffer, 2);
+  core_buf_push(buffer, 3);
+  core_buf_push(buffer, 4);
+  core_buf_push(buffer, 5);
+  core_buf_push(buffer, 6);
+  core_buf_push(buffer, 7);
+  core_buf_push(buffer, 8);
+  core_buf_push(buffer, 9);
+
+  for(int i = 0; i < (int)core_buf_size(buffer); ++i) {
+    printf("%d\n", buffer[i]);
+  }
+
   CoreWindow *window = core_window_create("TestBed", WINDOW_WIDTH, WINDOW_HEIGHT);
   
   bool running = true;
