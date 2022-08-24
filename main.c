@@ -7,7 +7,7 @@
 #include "core.h"
 #include "core_obj.h"
 #include "core_math.h"
-#include "core_hash.h"
+#include "core_ds.h"
 #include "renderman.h"
 
 #if 1
@@ -311,10 +311,19 @@ int main(void) {
   core_buf_push(buffer, 7);
   core_buf_push(buffer, 8);
   core_buf_push(buffer, 9);
+  core_buf_push(buffer, 10);
+  core_buf_push(buffer, 11);
+  core_buf_push(buffer, 12);
+  core_buf_push(buffer, 13);
+  core_buf_push(buffer, 14);
+  core_buf_push(buffer, 15);
+  core_buf_push(buffer, 16);
 
   for(int i = 0; i < (int)core_buf_size(buffer); ++i) {
     printf("%d\n", buffer[i]);
   }
+  
+  core_buf_free(buffer);
 
   CoreWindow *window = core_window_create("TestBed", WINDOW_WIDTH, WINDOW_HEIGHT);
   

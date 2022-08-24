@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include "core_type.h"
 #include "core_math.h"
+#include "core_ds.h"
 
 /* TODO: Create a specefic header file for common macros and constants */
 #define CORE_KB(v) ((v)*1024LL)

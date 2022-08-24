@@ -1,4 +1,4 @@
-#include "core_hash.h"
+#include "core_ds.h"
 
 #include <stdio.h>
 #include <stdlib.h>
