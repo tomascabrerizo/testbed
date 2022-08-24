@@ -59,6 +59,7 @@ char *f_shader_src =
 char *v_shader_src_fb = 
   "#version 330 core\n"
   "layout (location = 0) in vec3 aPos;\n"
+  "layout (location = 1) in vec3 aNor;\n"
   "uniform mat4 uProj;\n"
   "uniform mat4 uView;\n"
   "uniform mat4 uModel;\n"
@@ -143,14 +144,11 @@ void render_test_init(void) {
   glBindVertexArray(vao);
   glGenBuffers(1, &vbo);
   glBindBuffer(GL_ARRAY_BUFFER, vbo);
-  glBufferData(GL_ARRAY_BUFFER, teapot->v_count*sizeof(float), teapot->v_list, GL_STATIC_DRAW);
-  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (const void *)0);
+  glBufferData(GL_ARRAY_BUFFER, teapot->vertex_count*sizeof(CoreVertex), teapot->vertex_list, GL_STATIC_DRAW);
+  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(CoreVertex), (const void *)OFFSET_OFF(CoreVertex, p));
   glEnableVertexAttribArray(0);
-  /* Create element buffer object */
-  glGenBuffers(1, &ebo);
-  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
-  glBufferData(GL_ELEMENT_ARRAY_BUFFER, teapot->i_count*sizeof(int), teapot->i_list, GL_STATIC_DRAW);
-
+  glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(CoreVertex), (const void *)OFFSET_OFF(CoreVertex, n));
+  glEnableVertexAttribArray(1);
 
   /* TODO: ------- Copile default and frame buffer sahders ----------*/
   program = render_program_create(v_shader_src, f_shader_src);
@@ -213,8 +211,7 @@ void render_test_update(void) {
   glClearColor(0, 0, 0, 1);
   glClear(GL_COLOR_BUFFER_BIT);
   
-  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
-  glDrawElements(GL_TRIANGLES, teapot->i_count, GL_UNSIGNED_INT, 0);
+  glDrawArrays(GL_TRIANGLES, 0, teapot->vertex_count*3);
 
   /* TODO: This code path is not working (search how glDrawPixels shoud be use) */
 #if 0

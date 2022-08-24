@@ -62,14 +62,16 @@ typedef struct CoreVertex {
 
 typedef struct CoreObjCtx {
   CoreVertex *vertex_list;
+  uint64_t vertex_count;
   
-  int *i_list;
   uint64_t i_count;
 
   float *v_list;
+  int *vi_list;
   uint64_t v_count;
   
   float *n_list;
+  int *ni_list;
   uint64_t n_count;
 } CoreObjCtx;
 
@@ -89,7 +91,7 @@ void core_token_list_push(CoreTokenList *list, CoreToken token);
 CoreToken *core_token_list_pop(CoreTokenList *list); /* NOTE: Pops a token from the front of the list */
 CoreToken *core_token_list_top(CoreTokenList *list);
 /* TODO: Dont save tokens in al list, just push vertex and indices into strech buffers while lexing each token */
-void core_token_list_to_vertex_and_index_list(CoreTokenList *list, CoreObjCtx *ctx);
+void core_obj_parse_token_list(CoreObjCtx *ctx, CoreTokenList *list);
 
 CoreObjCtx *core_obj_create(const char *path);
 void core_obj_destroy(CoreObjCtx *ctx);
