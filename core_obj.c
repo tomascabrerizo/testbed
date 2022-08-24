@@ -144,14 +144,14 @@ CoreTokenList *core_tokenize_obj_file(CoreObjCtx *ctx, CoreFile *file) {
       } else if(*(c+1) == 'n') {
         tokenizer.end++;
         core_tokenizer_push_token(&tokenizer, list, CORE_TOKEN_VN);
-        ctx->n_count += 3; /* TODO: Search how obj files tears indices */
+        ctx->n_count += 3;
       } else {
         core_tokenizer_push_token(&tokenizer, list, CORE_TOKEN_V);
         ctx->v_count += 3;
       }
     } else if(*c == 'f') {
       core_tokenizer_push_token(&tokenizer, list, CORE_TOKEN_F);
-      ctx->i_count += 3; /* TODO: Search how obj files tears indices */
+      ctx->i_count += 3;
     } else if(*c == '/') {
       core_tokenizer_push_token(&tokenizer, list, CORE_TOKEN_SLASH);
     } else if(core_is_number(*c) || *c == '-' || *c == '.') {
@@ -232,9 +232,17 @@ void core_obj_parse_token_list(CoreObjCtx *ctx, CoreTokenList *list) {
   }
   
   assert(vi_cur == ni_cur);
+  assert(vi_cur == ctx->i_count);
+  assert(ni_cur == ctx->i_count);
+
+  printf("v_cur:%ld v_count:%ld\n", v_cur, ctx->v_count);
+  assert(v_cur == ctx->v_count);
+  printf("n_cur:%ld n_count:%ld\n", n_cur, ctx->n_count);
+  assert(n_cur == ctx->n_count);
+  
   assert(ctx->i_count % 3 == 0);
 
-  ctx->vertex_count = ctx->i_count / 3;
+  ctx->vertex_count = ctx->i_count/3;
   ctx->vertex_list = (CoreVertex *)malloc((ctx->vertex_count) * sizeof(CoreVertex));
   uint64_t cur_vertex = 0;
   uint64_t i;

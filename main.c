@@ -144,6 +144,7 @@ void render_test_init(void) {
   glBindVertexArray(vao);
   glGenBuffers(1, &vbo);
   glBindBuffer(GL_ARRAY_BUFFER, vbo);
+  
   glBufferData(GL_ARRAY_BUFFER, teapot->vertex_count*sizeof(CoreVertex), teapot->vertex_list, GL_STATIC_DRAW);
   glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(CoreVertex), (const void *)OFFSET_OFF(CoreVertex, p));
   glEnableVertexAttribArray(0);
@@ -211,7 +212,7 @@ void render_test_update(void) {
   glClearColor(0, 0, 0, 1);
   glClear(GL_COLOR_BUFFER_BIT);
   
-  glDrawArrays(GL_TRIANGLES, 0, teapot->vertex_count*3);
+  glDrawArrays(GL_TRIANGLES, 0, teapot->v_count);
 
   /* TODO: This code path is not working (search how glDrawPixels shoud be use) */
 #if 0
