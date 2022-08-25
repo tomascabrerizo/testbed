@@ -216,36 +216,8 @@ void render_test_update(void) {
   
   glDrawArrays(GL_TRIANGLES, 0, 3);
 
-  /* TODO: This code path is not working (search how glDrawPixels shoud be use) */
+/* TODO: This orperation is extremly SLOW (Dont do it) */
 #if 0
-  /* NOTE: Try to do this using glReadPixels glDrawPixels functions */
-  glRasterPos2i(0, 0);
-  glPixelZoom(1, 1);
-  glReadPixels(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT, GL_RGBA, GL_UNSIGNED_BYTE, screen_texture);
-
-  for(int y = 0;  y < WINDOW_HEIGHT; ++y) {
-    for(int x = WINDOW_WIDTH/2;  x < WINDOW_WIDTH; ++x) {
-        int i = y * WINDOW_WIDTH + x;
-        uint8_t a = (uint8_t)((screen_texture[i] >> 24) & 0xFF);
-        uint8_t b = (uint8_t)((screen_texture[i] >> 16) & 0xFF);
-        uint8_t g = (uint8_t)((screen_texture[i] >> 8)  & 0xFF);
-        uint8_t r = (uint8_t)((screen_texture[i] >> 0)  & 0xFF);
-        
-        r = .6f*r + .4f*(255 *sinf(y * .1f));
-        g = .6f*g + .4f*(255 *cosf(x * .1f));
-        b = .6f*b + .4f*(255 *sinf((y+x) * .1f));
-
-        screen_texture[i] = ((uint32_t)a << 24) | ((uint32_t)b << 16) | ((uint32_t)g << 8) | (uint32_t)r;
-    }
-  }
-  
-  glRasterPos2d(0.0f, 0.0f);
-  glPixelZoom(1, -1);
-  glDrawPixels(WINDOW_WIDTH, WINDOW_HEIGHT, GL_RGBA, GL_UNSIGNED_BYTE, screen_texture);
-  glFlush();
-#endif
-
-#if 0 /* TODO: This orperation is extremly SLOW (Dont do it) */
   /* Copy the GPU texture on CPU texture buffer */
   glBindTexture(GL_TEXTURE_2D, frame_buffer_texture);
   glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, screen_texture);

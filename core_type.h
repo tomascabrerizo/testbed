@@ -9,9 +9,8 @@
 
 #undef NULL
 #define NULL ((void *)0)
-#define internal static
 
-#define OFFSET_OFF(struct, x) ((unsigned long long)(&(((struct *)(0))->x)))
+#define OFFSET_OFF(struct, x) ((uint64_t)(&(((struct *)(0))->x)))
 
 #define CORE_MAX(a, b) ((a) >= (b)) ? (a) : (b)
 #define CORE_MIN(a, b) ((a) >= (b)) ? (a) : (b)
