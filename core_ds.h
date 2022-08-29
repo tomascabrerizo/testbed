@@ -4,7 +4,7 @@
 #include "core_type.h"
 
 /* ------------------------CIRCULAR DOUBLE LINK LIST-----------------------------------------*/
-  /* TODO: Make a circular double link list macros */
+  /* TODO: Test a circular double link list macros */
 #define core_c_dll_init(p) ((dummy)->next = (dummy), (dummy)->prev = (dummy))
 #define core_c_dll_push_back(dummy, v) ((v)->next = (dummy), \
                                         (v)->prev = (dummy)->prev, \
@@ -23,7 +23,6 @@
 #define CORE_MAP_ENTRY_EMPTY 0
 #define CORE_MAP_ENTRY_TOMBSTONE 1 /* TODO: Acully write the code to remove items */
 
-/* TODO: Make this hash table be able to delete things */
 typedef struct CoreMapEntry {
   void *key;
   void *value;
@@ -49,7 +48,6 @@ void *core_map_get_hash(CoreMap *map, void *key, uint64_t hash);
 /* ---------------------------STRECHED BUFFER----------------------------------------------- */
 
 /* NOTE: Streched buffers (c dynamic array) */
-/* TODO: This buffer are not tested yet */
 typedef struct CoreBuffHeader {
   uint64_t size;
   uint64_t cap;

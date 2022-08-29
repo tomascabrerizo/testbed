@@ -10,6 +10,7 @@
 #undef NULL
 #define NULL ((void *)0)
 
+#define ASSERT(x) assert((x))
 #define OFFSET_OFF(struct, x) ((uint64_t)(&(((struct *)(0))->x)))
 
 #define CORE_MAX(a, b) ((a) >= (b)) ? (a) : (b)
