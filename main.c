@@ -8,6 +8,7 @@
 #include "core_math.h"
 #include "core_ds.h"
 #include "renderman.h"
+#include "core_gl.h"
 
 #if 1
 #define WINDOW_WIDTH 640
@@ -272,32 +273,10 @@ void render_test_shutdown(void) {
 
 int main(void) {
 
-  /* NOTE: Dynamic buff test */
-  int *buffer = 0;
-  core_buf_push(buffer, 1);
-  core_buf_push(buffer, 2);
-  core_buf_push(buffer, 3);
-  core_buf_push(buffer, 4);
-  core_buf_push(buffer, 5);
-  core_buf_push(buffer, 6);
-  core_buf_push(buffer, 7);
-  core_buf_push(buffer, 8);
-  core_buf_push(buffer, 9);
-  core_buf_push(buffer, 10);
-  core_buf_push(buffer, 11);
-  core_buf_push(buffer, 12);
-  core_buf_push(buffer, 13);
-  core_buf_push(buffer, 14);
-  core_buf_push(buffer, 15);
-  core_buf_push(buffer, 16);
-
-  for(int i = 0; i < (int)core_buf_size(buffer); ++i) {
-    printf("%d\n", buffer[i]);
-  }
-  
-  core_buf_free(buffer);
-
   CoreWindow *window = core_window_create("TestBed", WINDOW_WIDTH, WINDOW_HEIGHT);
+
+  Render2D *render = render2d_create();
+  render2d_destroy(render);
   
   bool running = true;
 

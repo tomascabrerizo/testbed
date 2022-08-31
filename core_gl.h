@@ -60,7 +60,8 @@
   X(void, glReadPixels, (GLint x, GLint y, GLsizei width, GLsizei height, GLenum format, GLenum type, GLvoid *data)) \
   X(void, glUniformMatrix4fv, (GLint location, GLsizei	count, GLboolean	transpose, const GLfloat *	value)) \
   X(GLint, glGetUniformLocation, (GLuint program, const GLchar *name)) \
-  X(void, glDrawElements, (GLenum	mode, GLsizei	count, GLenum	type, const GLvoid *indices))
+  X(void, glDrawElements, (GLenum	mode, GLsizei	count, GLenum	type, const GLvoid *indices)) \
+  X(void, glUniform2f, (GLint	location, GLfloat	v0, GLfloat	v1))
 
 #define CORE_GL_PROC(name) CORE_##name##_POC
 

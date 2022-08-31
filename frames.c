@@ -29,6 +29,14 @@ FRect f_rect_bounding(FRect a, FRect b) {
   return (FRect){left, right, top, bottom};
 }
 
+FRect f_rect_translate(FRect a, int offset_x, int offset_y) {
+  a.left   += offset_x;
+  a.right  += offset_x;
+  a.top    += offset_y;
+  a.bottom += offset_y;
+  return a;
+}
+
 bool f_rect_contains(FRect a, int x, int y) {
   return ((x >= a.left) && (x <= a.right) && (y >= a.top && y <= a.bottom));
 }
@@ -55,7 +63,14 @@ typedef struct FFrame {
   FRect clip;
   int border;
   FHandle doker[F_DOKER_COUNT];
+  
   FHandle parent;
+  FHandle child_first;
+  FHandle child_last;
+  FHandle next;
+  FHandle prev;
+  
+
   FHandle handle;
   void *id;
 } FFrame;
@@ -101,24 +116,28 @@ FFrame *f_get_frame_from_register(void *id) {
       return &buf[i];
     }
   }
-  return 0;
+  
+  /* NOTE: if the frame is not register add new one */
+  FFrame f;
+  ASSERT(core_buf_size(state.frame_buf) > FINVALID);
+  f.handle = core_buf_size(state.frame_buf);
+  core_buf_push(state.frame_buf, f);
+  return f_frame(f.handle);
 }
 
 FHandle f_push_parent(void *id, FRect rect) {
   FFrame *frame = f_get_frame_from_register(id);
-  if(!frame) {
-    FFrame f;
-    ASSERT(core_buf_size(state.frame_buf) > FINVALID);
-    f.handle = core_buf_size(state.frame_buf);
-    core_buf_push(state.frame_buf, f);
-    frame = f_frame(f.handle);
-
-  }
   ASSERT(frame);
+  FFrame *parent = f_frame(state.parent);
   frame->rect = rect;
-  frame->clip = state.parent ? f_rect_intersection(frame->rect, f_frame(state.parent)->clip) : rect;
+  frame->clip = parent ? f_rect_intersection(f_rect_translate(rect, parent->rect.left, parent->rect.top), parent->clip) : rect;
   frame->border = 10;
   frame->parent = state.parent;
+  
+  frame->child_first = FINVALID;
+  frame->child_last = FINVALID;
+  frame->next = FINVALID;
+  frame->prev = FINVALID;
 
   if(!state.parent) {
     state.root = frame->handle;
@@ -131,17 +150,11 @@ FHandle f_push_parent(void *id, FRect rect) {
 
 FHandle f_push_frame(void *id, FRect rect) {
   FFrame *frame = f_get_frame_from_register(id);
-  if(!frame) {
-    FFrame f;
-    ASSERT(core_buf_size(state.frame_buf) > FINVALID);
-    f.handle = core_buf_size(state.frame_buf);
-    core_buf_push(state.frame_buf, f);
-    frame = f_frame(f.handle);
-  }
   ASSERT(frame);
   ASSERT(state.parent);
+  FFrame *parent = f_frame(state.parent);
   frame->rect = rect;
-  frame->clip = f_rect_intersection(frame->rect, f_frame(state.parent)->clip);
+  frame->clip = f_rect_intersection(f_rect_translate(rect, parent->rect.left, parent->rect.top), parent->clip);
   frame->border = 10;
   frame->parent = state.parent;
 
