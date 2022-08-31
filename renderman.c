@@ -106,7 +106,6 @@ static void *render_read_entire_file(char *path, uint64_t *size) {
   char *buffer = (void *)malloc(*size);
   fread(buffer, (*size - 1), 1, file);
   buffer[*size] = '\0';
-  printf("%s\n", buffer);
   fclose(file);
   return (void *)buffer;
 }
@@ -128,27 +127,58 @@ static unsigned int render_program_create_from_files(char *v_path, char *f_path)
   return program;
 }
 
+
+static float quad[] = {
+    // positions     // colors
+    -0.05f,  0.05f,  1.0f, 0.0f, 0.0f,
+     0.05f, -0.05f,  0.0f, 1.0f, 0.0f,
+    -0.05f, -0.05f,  0.0f, 0.0f, 1.0f,
+
+    -0.05f,  0.05f,  1.0f, 0.0f, 0.0f,
+     0.05f, -0.05f,  0.0f, 1.0f, 0.0f,   
+     0.05f,  0.05f,  0.0f, 1.0f, 1.0f		    		
+};  
+
 Render2D *render2d_create() {
   Render2D *render = (Render2D *)malloc(sizeof(*render));
   render->program = render_program_create_from_files("quad.vert", "quad.frag");
 
-#if 0
+  glGenVertexArrays(1, &render->vao); 
+  glBindVertexArray(render->vao);
+  
+  glGenBuffers(1, &render->vbo);
+  glBindBuffer(GL_ARRAY_BUFFER, render->vbo);
+  glBufferData(GL_ARRAY_BUFFER, sizeof(quad), quad, GL_STATIC_DRAW);
+  glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(float)*5, (const void *)0);
+  glEnableVertexAttribArray(0);
+  glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(float)*5, (const void *)(sizeof(float)*2));
+  glEnableVertexAttribArray(1);
+
   static Vertex2D offsets[100];
   for(int y = 0; y < 10; ++y) {
     for(int x = 0; x < 10; ++x) { 
-      offsets[y*10+x] = (Vertex2D){x/5-1, y/5-1};
+      offsets[y*10+x] = (Vertex2D){(x/4.5f)-1, (y/4.5f)-1};
+      printf("x:%f, y:%f\n", offsets[y*10+x].x, offsets[y*10+x].y);
     }
   }
-  
+
   glUseProgram(render->program);
   for(int i = 0; i < 100; ++i) {
-    static char *uniform_name = "offsets[x]";
-    uniform_name[8] = (char)('0' + i);
-    printf("%s\n", uniform_name);
-    int location = glGetUniformLocation(render->program, uniform_name);
-    glUniform2f(location, offsets[i].x, offsets[i].y);
+    /* TODO: this is total hack dont find uniforms array location this way */
+    ASSERT(i < 100);
+    /* NOTE:                       0   1   2   3   4   5   6   7   8   9   10  11  12  13 */
+    static char uniform_name[] = {'o','f','f','s','e','t','s','[','x',']','x','x','x','x'};
+    uniform_name[8] = (char)('0' + (i % 10));
+    uniform_name[10] = '\0';
+    if(i > 10) {
+      uniform_name[8] = (char)('0' + (i / 10));
+      uniform_name[9] = (char)('0' + (i % 10));
+      uniform_name[10] = ']';
+      uniform_name[11] = '\0';
+    } 
+
+    glUniform2f(glGetUniformLocation(render->program, uniform_name), offsets[i].x, offsets[i].y);
   }
-#endif
   return render;
 }
 
@@ -156,3 +186,12 @@ void render2d_destroy(Render2D *render) {
   free(render);
 }
 
+void render2d_draw(Render2D *render) {
+  glClearColor(0, 0, 0, 0);
+  glClear(GL_COLOR_BUFFER_BIT);
+  
+  glUseProgram(render->program);
+  glGenVertexArrays(1, &render->vao); 
+  glBindBuffer(GL_ARRAY_BUFFER, render->vbo);
+  glDrawArraysInstanced(GL_TRIANGLES, 0, 6, 100);  
+}

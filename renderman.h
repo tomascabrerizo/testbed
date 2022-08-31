@@ -46,5 +46,6 @@ typedef struct Render2D {
 
 Render2D *render2d_create();
 void render2d_destroy(Render2D *render);
+void render2d_draw(Render2D *render);
 
 #endif /* RENDERMAN_H */
