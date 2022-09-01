@@ -61,9 +61,11 @@
   X(void, glUniformMatrix4fv, (GLint location, GLsizei	count, GLboolean	transpose, const GLfloat *	value)) \
   X(GLint, glGetUniformLocation, (GLuint program, const GLchar *name)) \
   X(void, glDrawElements, (GLenum	mode, GLsizei	count, GLenum	type, const GLvoid *indices)) \
-  X(void, glUniform2f, (GLint	location, GLfloat	v0, GLfloat	v1)) \
   X(void, glDrawArraysInstanced, (GLenum mode, GLint first, GLsizei count, GLsizei primcount)) \
-  X(void, glVertexAttribDivisor, (GLuint index, GLuint divisor))
+  X(void, glVertexAttribDivisor, (GLuint index, GLuint divisor)) \
+  X(void, glUniform2f, (GLint	location, GLfloat	v0, GLfloat	v1)) \
+  X(void, glUniform1i, (GLint location, GLint v0)) \
+  X(void, glBufferSubData, (GLenum	target, GLintptr	offset, GLsizeiptr size, const GLvoid *data))
 
 #define CORE_GL_PROC(name) CORE_##name##_POC
 

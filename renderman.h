@@ -38,15 +38,35 @@ typedef struct Vertex2D {
   float x, y;
 } Vertex2D;
 
+#define MAX_COMMAND_BUFFER 10000
+typedef struct RenderCommand2D {
+  float x, y, w, h;
+} RenderCommand2D;
+
 typedef struct Render2D {
   unsigned int vao;
-  unsigned int vbo;
-  unsigned int instance_vbo;
+  unsigned int vbo_quad;
+  unsigned int vbo_instance;
   unsigned int program;
+
+  unsigned int resolution_x;
+  unsigned int resolution_y;
+
+  /* NOTE: Uniform location register */
+  RenderCommand2D *command_buffer;
+  uint64_t command_buffer_size;
+  CoreMap *uniform_register; 
 } Render2D;
 
 Render2D *render2d_create();
 void render2d_destroy(Render2D *render);
+
+void render2d_add_uniform(Render2D *render, char *name);
+int render2d_get_uniform(Render2D *render, char *name);
+void render2d_set_resolution(Render2D *render, unsigned int width, unsigned int height);
+
+void render2d_buffer_flush(Render2D *render);
+void render2d_draw_quad(Render2D *render, int x, int y, int w, int h);
 void render2d_draw(Render2D *render);
 
 #endif /* RENDERMAN_H */

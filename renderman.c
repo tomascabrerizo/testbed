@@ -1,3 +1,5 @@
+#include <string.h>
+
 #include "renderman.h"
 #include "core_gl.h"
 
@@ -28,29 +30,6 @@ void renderman_render_end(RManRenderer *render) {
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
-
-#if 0
-static char *v_shader_src = 
-  "#version 330 core\n"
-  "layout (location = 0) in vec3 aPos;\n"
-  "layout (location = 1) in vec4 aColor;\n"
-  "uniform mat4 uProj;\n"
-  "out vec4 color;\n"
-  "void main()\n"
-  "{\n"
-  "   color = aColor;\n"
-  "   gl_Position = uProj * vec4(aPos, 1.0);\n"
-  "}\0";
-
-static char *f_shader_src = 
-  "#version 330 core\n"
-  "in vec4 color;\n"
-  "out vec4 fragment;\n"
-  "void main()\n"
-  "{\n"
-  "   fragment = color;\n"
-  "}\0";
-#endif
 
 static unsigned int render_program_create(char *v_src, char *f_src) {
   int success;
@@ -127,81 +106,107 @@ static unsigned int render_program_create_from_files(char *v_path, char *f_path)
   return program;
 }
 
-
 static float quad[] = {
-    // positions     // colors
-    -0.05f,  0.05f,  1.0f, 0.0f, 0.0f,
-     0.05f, -0.05f,  0.0f, 1.0f, 0.0f,
-    -0.05f, -0.05f,  0.0f, 0.0f, 1.0f,
-
-    -0.05f,  0.05f,  1.0f, 0.0f, 0.0f,
-     0.05f, -0.05f,  0.0f, 1.0f, 0.0f,   
-     0.05f,  0.05f,  0.0f, 1.0f, 1.0f		    		
+  -1.0f,  1.0f,
+  -1.0f, -1.0f,
+   1.0f, -1.0f,
+   1.0f,  1.0f,
 };  
 
 Render2D *render2d_create() {
   Render2D *render = (Render2D *)malloc(sizeof(*render));
   render->program = render_program_create_from_files("quad.vert", "quad.frag");
+  
+  /* NOTE: Setup uniform location hash table */
+  render->uniform_register = core_map_create();
+  render2d_add_uniform(render, "res_x");
+  render2d_add_uniform(render, "res_y");
 
+  /* NOTE: Allocate render command buffer */
+  render->command_buffer = (RenderCommand2D *)malloc(sizeof(RenderCommand2D) * MAX_COMMAND_BUFFER);
+  render->command_buffer_size = 0;
+
+  /* NOTE: Setup OpenGL buffers */
   glGenVertexArrays(1, &render->vao); 
   glBindVertexArray(render->vao);
   
-  glGenBuffers(1, &render->vbo);
-  glBindBuffer(GL_ARRAY_BUFFER, render->vbo);
+  glGenBuffers(1, &render->vbo_quad);
+  glBindBuffer(GL_ARRAY_BUFFER, render->vbo_quad);
   glBufferData(GL_ARRAY_BUFFER, sizeof(quad), quad, GL_STATIC_DRAW);
-  glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(float)*5, (const void *)0);
+  glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, (const void *)0);
   glEnableVertexAttribArray(0);
-  glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(float)*5, (const void *)(sizeof(float)*2));
-  glEnableVertexAttribArray(1);
-  glBindBuffer(GL_ARRAY_BUFFER, 0); 
-
-  static Vertex2D offsets[100];
-  for(int y = 0; y < 10; ++y) {
-    for(int x = 0; x < 10; ++x) { 
-      offsets[y*10+x] = (Vertex2D){(x/4.5f)-1, (y/4.5f)-1};
-    }
-  }
   
-  glGenBuffers(1, &render->instance_vbo);
-  glBindBuffer(GL_ARRAY_BUFFER, render->instance_vbo);
-  glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex2D)*100, offsets, GL_STATIC_DRAW);
+  glGenBuffers(1, &render->vbo_instance);
+  glBindBuffer(GL_ARRAY_BUFFER, render->vbo_instance);
+  glBufferData(GL_ARRAY_BUFFER, sizeof(RenderCommand2D)*MAX_COMMAND_BUFFER, render->command_buffer, GL_DYNAMIC_DRAW);
+  
   glEnableVertexAttribArray(2);
-  glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void*)0);
+  glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
   glVertexAttribDivisor(2, 1);  
+
+  glEnableVertexAttribArray(3);
+  glVertexAttribPointer(3, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
+  glVertexAttribDivisor(3, 1);  
+  
   glBindBuffer(GL_ARRAY_BUFFER, 0); 
   
-#if 0
-  glUseProgram(render->program);
-  for(int i = 0; i < 100; ++i) {
-    /* TODO: this is total hack dont find uniforms array location this way */
-    ASSERT(i < 100);
-    /* NOTE:                       0   1   2   3   4   5   6   7   8   9   10  11  12  13 */
-    static char uniform_name[] = {'o','f','f','s','e','t','s','[','x',']','x','x','x','x'};
-    uniform_name[8] = (char)('0' + (i % 10));
-    uniform_name[10] = '\0';
-    if(i > 10) {
-      uniform_name[8] = (char)('0' + (i / 10));
-      uniform_name[9] = (char)('0' + (i % 10));
-      uniform_name[10] = ']';
-      uniform_name[11] = '\0';
-    } 
-
-    glUniform2f(glGetUniformLocation(render->program, uniform_name), offsets[i].x, offsets[i].y);
-  }
-#endif
   return render;
 }
 
 void render2d_destroy(Render2D *render) {
+  core_map_destroy(render->uniform_register);
+  free(render->command_buffer);
   free(render);
+}
+
+void render2d_draw_quad(Render2D *render, int x, int y, int w, int h) {
+  if(render->command_buffer_size + 1 >= MAX_COMMAND_BUFFER) {
+    render2d_buffer_flush(render);
+  }
+
+  RenderCommand2D *command = render->command_buffer + render->command_buffer_size++;
+  command->x = x;
+  command->y = y;
+  command->w = w;
+  command->h = h;
+}
+
+void render2d_buffer_flush(Render2D *render) {
+  glUseProgram(render->program);
+  glGenVertexArrays(1, &render->vao); 
+  glBindBuffer(GL_ARRAY_BUFFER, render->vbo_quad);
+  glBindBuffer(GL_ARRAY_BUFFER, render->vbo_instance);
+
+  glBufferSubData(GL_ARRAY_BUFFER, 0, render->command_buffer_size, (void *)render->command_buffer);
+
+  glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0, 4, render->command_buffer_size);  
+  render->command_buffer_size = 0;
+
+  printf("buffer flush\n");
 }
 
 void render2d_draw(Render2D *render) {
   glClearColor(0, 0, 0, 0);
   glClear(GL_COLOR_BUFFER_BIT);
   
+  if(render->command_buffer_size > 0) {
+    render2d_buffer_flush(render);
+  }
+}
+
+void render2d_add_uniform(Render2D *render, char *name) {
+  uint64_t hash = core_hash64(name, strlen(name), CORE_MAP_SEED);
+  int64_t uniform_loc = glGetUniformLocation(render->program, name);
+  core_map_add_hash(render->uniform_register, (void *)hash, (void *)uniform_loc, hash);
+}
+
+int render2d_get_uniform(Render2D *render, char *name) {
+  uint64_t hash = core_hash64(name, strlen(name), CORE_MAP_SEED);
+  return (int)((int64_t)core_map_get_hash(render->uniform_register, (void *)hash, hash));
+}
+
+void render2d_set_resolution(Render2D *render, unsigned int width, unsigned int height) {
   glUseProgram(render->program);
-  glGenVertexArrays(1, &render->vao); 
-  glBindBuffer(GL_ARRAY_BUFFER, render->vbo);
-  glDrawArraysInstanced(GL_TRIANGLES, 0, 6, 100);  
+  glUniform1i(render2d_get_uniform(render, "res_x"), width);
+  glUniform1i(render2d_get_uniform(render, "res_y"), height);
 }
