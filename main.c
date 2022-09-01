@@ -35,11 +35,14 @@ int main(void) {
       glViewport(0, 0, state->width, state->height);
       render2d_set_resolution(render, state->width, state->height);
     }
-     
+    
+    render2d_begin(render);
+
     render2d_draw_quad(render, 0, 0, 100, 100);
     render2d_draw_quad(render, 300, 200, 100, 100);
 
-    render2d_draw(render);
+    render2d_end(render);
+    
     core_window_swap_buffers(window);
   }
   

@@ -162,7 +162,7 @@ void render2d_destroy(Render2D *render) {
 }
 
 void render2d_draw_quad(Render2D *render, int x, int y, int w, int h) {
-  if(render->command_buffer_size + 1 >= MAX_COMMAND_BUFFER) {
+  if(render->command_buffer_size + 1 > MAX_COMMAND_BUFFER) {
     render2d_buffer_flush(render);
   }
 
@@ -179,20 +179,26 @@ void render2d_buffer_flush(Render2D *render) {
   glBufferSubData(GL_ARRAY_BUFFER, 0, render->command_buffer_size*sizeof(RenderCommand2D), (void *)render->command_buffer);
   glBindBuffer(GL_ARRAY_BUFFER, 0);
   /* NOTE: Render the new command buffer */
-  glUseProgram(render->program);
-  glBindVertexArray(render->vao);
   glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0, 4, render->command_buffer_size);  
   render->command_buffer_size = 0;
-  glBindVertexArray(0);
 }
 
-void render2d_draw(Render2D *render) {
+
+void render2d_begin(Render2D *render) {
+  /* NOTE: Clear screen */
   glClearColor(0, 0, 0, 0);
   glClear(GL_COLOR_BUFFER_BIT);
-  
+  /* NOTE: Bind render shader and buffers */
+  glUseProgram(render->program);
+  glBindVertexArray(render->vao);
+}
+
+void render2d_end(Render2D *render) {
   if(render->command_buffer_size > 0) {
     render2d_buffer_flush(render);
   }
+  glUseProgram(0);
+  glBindVertexArray(0);
 }
 
 void render2d_add_uniform(Render2D *render, char *name) {

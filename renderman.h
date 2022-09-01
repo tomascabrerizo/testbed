@@ -38,7 +38,7 @@ typedef struct Vertex2D {
   float x, y;
 } Vertex2D;
 
-#define MAX_COMMAND_BUFFER 10000
+#define MAX_COMMAND_BUFFER 10000 
 typedef struct RenderCommand2D {
   float x, y, w, h;
 } RenderCommand2D;
@@ -66,7 +66,10 @@ int render2d_get_uniform(Render2D *render, char *name);
 void render2d_set_resolution(Render2D *render, unsigned int width, unsigned int height);
 
 void render2d_buffer_flush(Render2D *render);
+void render2d_begin(Render2D *render);
+void render2d_end(Render2D *render);
+
 void render2d_draw_quad(Render2D *render, int x, int y, int w, int h);
-void render2d_draw(Render2D *render);
+
 
 #endif /* RENDERMAN_H */
