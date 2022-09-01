@@ -62,7 +62,8 @@
   X(GLint, glGetUniformLocation, (GLuint program, const GLchar *name)) \
   X(void, glDrawElements, (GLenum	mode, GLsizei	count, GLenum	type, const GLvoid *indices)) \
   X(void, glUniform2f, (GLint	location, GLfloat	v0, GLfloat	v1)) \
-  X(void, glDrawArraysInstanced, (GLenum mode, GLint first, GLsizei count, GLsizei primcount))
+  X(void, glDrawArraysInstanced, (GLenum mode, GLint first, GLsizei count, GLsizei primcount)) \
+  X(void, glVertexAttribDivisor, (GLuint index, GLuint divisor))
 
 #define CORE_GL_PROC(name) CORE_##name##_POC
 

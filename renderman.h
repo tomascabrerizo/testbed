@@ -41,6 +41,7 @@ typedef struct Vertex2D {
 typedef struct Render2D {
   unsigned int vao;
   unsigned int vbo;
+  unsigned int instance_vbo;
   unsigned int program;
 } Render2D;
 

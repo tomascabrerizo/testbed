@@ -94,17 +94,17 @@ static unsigned int render_program_create(char *v_src, char *f_src) {
 static void *render_read_entire_file(char *path, uint64_t *size) {
   FILE *file = fopen(path, "rb");
   if(!file) {
-    printf("fail to load file %s\n", path);
+    printf("Fail to load file %s\n", path);
     *size = 0;
     fclose(file);
     return 0;
   }
 
   fseek(file, 0, SEEK_END);
-  *size = ftell(file) + 1;
+  *size = ftell(file);
   fseek(file, 0, SEEK_SET);
-  char *buffer = (void *)malloc(*size);
-  fread(buffer, (*size - 1), 1, file);
+  char *buffer = (void *)malloc(*size + 1);
+  fread(buffer, (*size), 1, file);
   buffer[*size] = '\0';
   fclose(file);
   return (void *)buffer;
@@ -153,15 +153,24 @@ Render2D *render2d_create() {
   glEnableVertexAttribArray(0);
   glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(float)*5, (const void *)(sizeof(float)*2));
   glEnableVertexAttribArray(1);
+  glBindBuffer(GL_ARRAY_BUFFER, 0); 
 
   static Vertex2D offsets[100];
   for(int y = 0; y < 10; ++y) {
     for(int x = 0; x < 10; ++x) { 
       offsets[y*10+x] = (Vertex2D){(x/4.5f)-1, (y/4.5f)-1};
-      printf("x:%f, y:%f\n", offsets[y*10+x].x, offsets[y*10+x].y);
     }
   }
-
+  
+  glGenBuffers(1, &render->instance_vbo);
+  glBindBuffer(GL_ARRAY_BUFFER, render->instance_vbo);
+  glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex2D)*100, offsets, GL_STATIC_DRAW);
+  glEnableVertexAttribArray(2);
+  glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void*)0);
+  glVertexAttribDivisor(2, 1);  
+  glBindBuffer(GL_ARRAY_BUFFER, 0); 
+  
+#if 0
   glUseProgram(render->program);
   for(int i = 0; i < 100; ++i) {
     /* TODO: this is total hack dont find uniforms array location this way */
@@ -179,6 +188,7 @@ Render2D *render2d_create() {
 
     glUniform2f(glGetUniformLocation(render->program, uniform_name), offsets[i].x, offsets[i].y);
   }
+#endif
   return render;
 }
 
