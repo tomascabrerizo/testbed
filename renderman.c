@@ -109,8 +109,8 @@ static unsigned int render_program_create_from_files(char *v_path, char *f_path)
 static float quad[] = {
   -1.0f,  1.0f,
   -1.0f, -1.0f,
-   1.0f, -1.0f,
    1.0f,  1.0f,
+   1.0f, -1.0f,
 };  
 
 Render2D *render2d_create() {
@@ -119,6 +119,7 @@ Render2D *render2d_create() {
   
   /* NOTE: Setup uniform location hash table */
   render->uniform_register = core_map_create();
+  /* TODO: rename add uniform to register uniform */
   render2d_add_uniform(render, "res_x");
   render2d_add_uniform(render, "res_y");
 
@@ -140,15 +141,16 @@ Render2D *render2d_create() {
   glBindBuffer(GL_ARRAY_BUFFER, render->vbo_instance);
   glBufferData(GL_ARRAY_BUFFER, sizeof(RenderCommand2D)*MAX_COMMAND_BUFFER, render->command_buffer, GL_DYNAMIC_DRAW);
   
-  glEnableVertexAttribArray(2);
-  glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
-  glVertexAttribDivisor(2, 1);  
+  glEnableVertexAttribArray(1);
+  glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(RenderCommand2D), (void*)0);
+  glVertexAttribDivisor(1, 1);  
 
-  glEnableVertexAttribArray(3);
-  glVertexAttribPointer(3, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
-  glVertexAttribDivisor(3, 1);  
+  glEnableVertexAttribArray(2);
+  glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(RenderCommand2D), (void*)(2 * sizeof(float)));
+  glVertexAttribDivisor(2, 1);  
   
   glBindBuffer(GL_ARRAY_BUFFER, 0); 
+  glBindVertexArray(0);
   
   return render;
 }
@@ -172,17 +174,16 @@ void render2d_draw_quad(Render2D *render, int x, int y, int w, int h) {
 }
 
 void render2d_buffer_flush(Render2D *render) {
-  glUseProgram(render->program);
-  glGenVertexArrays(1, &render->vao); 
-  glBindBuffer(GL_ARRAY_BUFFER, render->vbo_quad);
+  /* NOTE: Update command buffer instance */
   glBindBuffer(GL_ARRAY_BUFFER, render->vbo_instance);
-
-  glBufferSubData(GL_ARRAY_BUFFER, 0, render->command_buffer_size, (void *)render->command_buffer);
-
+  glBufferSubData(GL_ARRAY_BUFFER, 0, render->command_buffer_size*sizeof(RenderCommand2D), (void *)render->command_buffer);
+  glBindBuffer(GL_ARRAY_BUFFER, 0);
+  /* NOTE: Render the new command buffer */
+  glUseProgram(render->program);
+  glBindVertexArray(render->vao);
   glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0, 4, render->command_buffer_size);  
   render->command_buffer_size = 0;
-
-  printf("buffer flush\n");
+  glBindVertexArray(0);
 }
 
 void render2d_draw(Render2D *render) {

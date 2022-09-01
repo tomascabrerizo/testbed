@@ -8,8 +8,15 @@ uniform int res_x;
 uniform int res_y;
 
 void main() {
-  vec2 half_res = vec2(res_x * 0.5, res_y * 0.5);
+
+  // scale and translate
   vec2 half_dim = aDim * 0.5;
   vec2 vertex = (aVert * half_dim) + half_dim + aPos;
-  gl_Position = vec4((vertex - half_res) / half_res, 0, 1.0);
+  
+  // scale into [-1, 1] coordinate space
+  vec2 half_res = vec2(float(res_x) * 0.5, float(res_y) * 0.5);
+  vec2 screen = (vertex / half_res) - 1;
+  screen.y = -screen.y; // Invert y axis
+  
+  gl_Position = vec4(screen, 0, 1.0);
 }
