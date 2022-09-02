@@ -148,6 +148,10 @@ Render2D *render2d_create() {
   glEnableVertexAttribArray(2);
   glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(RenderCommand2D), (void*)(2 * sizeof(float)));
   glVertexAttribDivisor(2, 1);  
+
+  glEnableVertexAttribArray(3);
+  glVertexAttribIPointer(3, 1, GL_UNSIGNED_INT, sizeof(RenderCommand2D), (void*)(4 * sizeof(float)));
+  glVertexAttribDivisor(3, 1);  
   
   glBindBuffer(GL_ARRAY_BUFFER, 0); 
   glBindVertexArray(0);
@@ -161,12 +165,16 @@ void render2d_destroy(Render2D *render) {
   free(render);
 }
 
-void render2d_draw_quad(Render2D *render, int x, int y, int w, int h) {
+static inline RenderCommand2D *render2d_push_command(Render2D *render) {
   if(render->command_buffer_size + 1 > MAX_COMMAND_BUFFER) {
     render2d_buffer_flush(render);
   }
+  return render->command_buffer + render->command_buffer_size++;
+}
 
-  RenderCommand2D *command = render->command_buffer + render->command_buffer_size++;
+void render2d_draw_quad(Render2D *render, int x, int y, int w, int h) {
+  RenderCommand2D *command = render2d_push_command(render);
+  command->flags = COMMAND_RECT;
   command->x = x;
   command->y = y;
   command->w = w;
@@ -182,7 +190,6 @@ void render2d_buffer_flush(Render2D *render) {
   glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0, 4, render->command_buffer_size);  
   render->command_buffer_size = 0;
 }
-
 
 void render2d_begin(Render2D *render) {
   /* NOTE: Clear screen */

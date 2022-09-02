@@ -49,6 +49,7 @@
   X(void, glDeleteProgram, (GLuint program)) \
   X(void, glUseProgram, (GLuint program)) \
   X(void, glVertexAttribPointer, (GLuint	index, GLint	size, GLenum	type, GLboolean	normalized, GLsizei	stride, const GLvoid *pointer)) \
+  X(void, glVertexAttribIPointer, (GLuint	index, GLint	size, GLenum	type, GLsizei	stride, const GLvoid *pointer)) \
   X(void, glEnableVertexAttribArray, (GLuint	index)) \
   X(void, glDisableVertexAttribArray, (GLuint	index)) \
   X(void, glDrawArrays, (GLenum	mode, GLint	first, GLsizei	count)) \

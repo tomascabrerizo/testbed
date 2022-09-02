@@ -38,9 +38,16 @@ typedef struct Vertex2D {
   float x, y;
 } Vertex2D;
 
+typedef enum RenderComman2DType {
+  COMMAND_RECT        = (1 << 0), // 1
+  COMMAND_TEXTURE     = (1 << 1), // 2
+  COMMAND_BORDER_RECT = (1 << 2), // 4
+} RenderComman2DType;
+
 #define MAX_COMMAND_BUFFER 10000 
 typedef struct RenderCommand2D {
   float x, y, w, h;
+  uint32_t flags;
 } RenderCommand2D;
 
 typedef struct Render2D {
@@ -52,9 +59,10 @@ typedef struct Render2D {
   unsigned int resolution_x;
   unsigned int resolution_y;
 
-  /* NOTE: Uniform location register */
+  /* NOTE: Render commands buffer */
   RenderCommand2D *command_buffer;
   uint64_t command_buffer_size;
+  /* NOTE: Uniform location register */
   CoreMap *uniform_register; 
 } Render2D;
 
