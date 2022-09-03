@@ -196,7 +196,7 @@ void render2d_buffer_flush(Render2D *render) {
 
 void render2d_begin(Render2D *render) {
   /* NOTE: Clear screen */
-  glClearColor(0.2, 0.2, 0.2, 0.2);
+  glClearColor(0.0, 0.0, 0.0, 1.0);
   glClear(GL_COLOR_BUFFER_BIT);
   /* NOTE: Bind render shader and buffers */
   glUseProgram(render->program);
