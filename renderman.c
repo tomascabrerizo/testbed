@@ -107,10 +107,11 @@ static unsigned int render_program_create_from_files(char *v_path, char *f_path)
 }
 
 static float quad[] = {
-  -1.0f,  1.0f,
-  -1.0f, -1.0f,
-   1.0f,  1.0f,
-   1.0f, -1.0f,
+  /* positions   uvs      */
+  -1.0f,  1.0f,  0.0f, 1.0f,
+  -1.0f, -1.0f,  0.0f, 0.0f,
+   1.0f,  1.0f,  1.0f, 1.0f,
+   1.0f, -1.0f,  1.0f, 0.0f,
 };  
 
 Render2D *render2d_create() {
@@ -134,24 +135,26 @@ Render2D *render2d_create() {
   glGenBuffers(1, &render->vbo_quad);
   glBindBuffer(GL_ARRAY_BUFFER, render->vbo_quad);
   glBufferData(GL_ARRAY_BUFFER, sizeof(quad), quad, GL_STATIC_DRAW);
-  glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, (const void *)0);
+  glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(float) *4, (const void *)0);
   glEnableVertexAttribArray(0);
+  glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(float) *4, (const void *)(2 * sizeof(float)));
+  glEnableVertexAttribArray(1);
   
   glGenBuffers(1, &render->vbo_instance);
   glBindBuffer(GL_ARRAY_BUFFER, render->vbo_instance);
   glBufferData(GL_ARRAY_BUFFER, sizeof(RenderCommand2D)*MAX_COMMAND_BUFFER, render->command_buffer, GL_DYNAMIC_DRAW);
   
-  glEnableVertexAttribArray(1);
-  glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(RenderCommand2D), (void*)0);
-  glVertexAttribDivisor(1, 1);  
-
   glEnableVertexAttribArray(2);
-  glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(RenderCommand2D), (void*)(2 * sizeof(float)));
+  glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(RenderCommand2D), (void*)0);
   glVertexAttribDivisor(2, 1);  
 
   glEnableVertexAttribArray(3);
-  glVertexAttribIPointer(3, 1, GL_UNSIGNED_INT, sizeof(RenderCommand2D), (void*)(4 * sizeof(float)));
+  glVertexAttribPointer(3, 2, GL_FLOAT, GL_FALSE, sizeof(RenderCommand2D), (void*)(2 * sizeof(float)));
   glVertexAttribDivisor(3, 1);  
+
+  glEnableVertexAttribArray(4);
+  glVertexAttribIPointer(4, 1, GL_UNSIGNED_INT, sizeof(RenderCommand2D), (void*)(4 * sizeof(float)));
+  glVertexAttribDivisor(4, 1);  
   
   glBindBuffer(GL_ARRAY_BUFFER, 0); 
   glBindVertexArray(0);

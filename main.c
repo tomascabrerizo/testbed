@@ -38,8 +38,11 @@ int main(void) {
     
     render2d_begin(render);
 
-    render2d_draw_quad(render, 0, 0, 100, 100);
-    render2d_draw_quad(render, 300, 200, 100, 100);
+    int dim_x = 400;
+    int dim_y = 200;
+    int pos_x = (core_window_get_width(window) / 2) - (dim_x / 2);
+    int pos_y = (core_window_get_height(window) / 2) - (dim_y / 2);
+    render2d_draw_quad(render, pos_x, pos_y, dim_x, dim_y);
 
     render2d_end(render);
     
