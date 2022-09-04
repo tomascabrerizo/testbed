@@ -45,7 +45,7 @@ int main(void) {
     render2d_draw_quad(render, pos_x, pos_y, dim_x, dim_y);
     render2d_draw_quad(render, 0, core_window_get_height(window) - 50, 100, 50);
     render2d_draw_quad(render, 0, 0, 50, 100);
-    render2d_draw_quad(render, 60, 0, 100, 100);
+    render2d_draw_quad(render, 60, 0, 100, 50);
 
     render2d_end(render);
     
