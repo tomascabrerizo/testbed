@@ -27,15 +27,15 @@ uniform sampler2D tex;
 
 void main() {
   if(has_flag(command, COMMAND_RECT)) {
-    vec4 bg_color = vec4(0, 0, 0, 1);
-    vec3 border_color = vec3(0.27, 0.44, 0.70);
+    const vec4 bg_color = vec4(0, 0, 0, 1);
+    const vec3 border_color = vec3(0.27, 0.44, 0.70);
     vec3 color = vec3(0.25, 0.37, 0.55);
 
     /* TODO: all this information should come in vertex attributes */
-    float r = 10.0;
-    float border_radius = 2.0;
-    float edge_softness = 1.0; 
-    float tex = 1.0;
+    const float r = 10.0;
+    const float border_radius = 2.0;
+    const float edge_softness = 1.0; 
+    const float tex = 1.0;
     
     vec2 coord = uvs * dim;
     vec2 center_pos = coord - (dim* 0.5);
@@ -51,18 +51,18 @@ void main() {
     fragment = vec4(color, alpha);
   
   } else if(has_flag(command, COMMAND_TEXTURE)) {
-    float edge_softness = 1.0;
-    vec3 color = vec3(0.0, 1.0, 0.0);
-    
-    vec2 tex_dim = vec2(512);
-    vec2 glyph_off = vec2(453, 72) / tex_dim;
-    vec2 glyph_dim = vec2(46, 56) / tex_dim;
+    const float edge_softness = 0.2;
+    const vec3 color = vec3(0.0, 1.0, 0.0);
+    const vec2 tex_dim = vec2(512);
+    const vec2 glyph_off = vec2(453, 72) / tex_dim;
+    const vec2 glyph_dim = vec2(46, 56) / tex_dim;
 
     vec2 tex_uvs = vec2(uvs.x, 1.0 - uvs.y);
     tex_uvs = mix(glyph_off, glyph_off + glyph_dim, tex_uvs); 
-    float sdf = texture(tex, tex_uvs).a;
-    float alpha = smoothstep(0.5, 0.55, 1.0 - sdf);
+    
+    float sdf = 1.0 - texture(tex, tex_uvs).a;
+    float alpha = 1.0 - smoothstep(0.5, 0.5 + edge_softness, sdf);
 
-    fragment = vec4(color, 1.0 - alpha);
+    fragment = vec4(color, alpha);
   }
 }

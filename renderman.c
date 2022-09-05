@@ -1,11 +1,11 @@
 #include <string.h>
 
 #include "renderman.h"
+#include "core.h"
 #include "core_gl.h"
 
 #include <stdlib.h>
 #include <string.h>
-#include <stdio.h>
 
 static unsigned int render_program_create(char *v_src, char *f_src) {
   int success;
@@ -43,26 +43,6 @@ static unsigned int render_program_create(char *v_src, char *f_src) {
   glDeleteShader(f_shader);
   
   return program;
-
-}
-
-static void *render_read_entire_file(char *path, uint64_t *size) {
-  FILE *file = fopen(path, "rb");
-  if(!file) {
-    printf("Fail to load file %s\n", path);
-    *size = 0;
-    fclose(file);
-    return 0;
-  }
-
-  fseek(file, 0, SEEK_END);
-  *size = ftell(file);
-  fseek(file, 0, SEEK_SET);
-  char *buffer = (void *)malloc(*size + 1);
-  fread(buffer, (*size), 1, file);
-  buffer[*size] = '\0';
-  fclose(file);
-  return (void *)buffer;
 }
 
 #define READ_U16(data) *((uint16_t *)data); data = (uint16_t *)data + 1
@@ -71,7 +51,7 @@ static void *render_read_entire_file(char *path, uint64_t *size) {
 
 Texture2D *render_texture_create_from_file(char *path) {
   uint64_t size;
-  void *file = render_read_entire_file(path, &size);
+  void *file = core_read_entire_file(path, &size);
   if(file) {
     void *temp_bmp_data = file;
     
@@ -154,8 +134,8 @@ void render_texture_destroy(Texture2D *texture) {
 
 static unsigned int render_program_create_from_files(char *v_path, char *f_path) {
   uint64_t v_size, f_size;
-  char *v_src = (char *)render_read_entire_file(v_path, &v_size);
-  char *f_src = (char *)render_read_entire_file(f_path, &f_size);
+  char *v_src = (char *)core_read_entire_file(v_path, &v_size);
+  char *f_src = (char *)core_read_entire_file(f_path, &f_size);
 
   (void)v_src;
   (void)f_src;

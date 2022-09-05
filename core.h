@@ -11,6 +11,8 @@ int core_window_get_width(struct CoreWindow *window);
 int core_window_get_height(struct CoreWindow *window);
 void core_window_swap_buffers(struct CoreWindow *window);
 
+void *core_read_entire_file(char *path, uint64_t *size);
+
 typedef struct CoreState {
   /* NOTE: this bool types need to be reset each frame */
   unsigned char quit;

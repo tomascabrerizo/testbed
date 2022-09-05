@@ -210,3 +210,22 @@ CoreState *core_state_get_state(struct CoreWindow *window) {
   }
   return &window->state;
 }
+
+void *core_read_entire_file(char *path, uint64_t *size) {
+  FILE *file = fopen(path, "rb");
+  if(!file) {
+    printf("Fail to load file %s\n", path);
+    *size = 0;
+    fclose(file);
+    return 0;
+  }
+
+  fseek(file, 0, SEEK_END);
+  *size = ftell(file);
+  fseek(file, 0, SEEK_SET);
+  char *buffer = (void *)malloc(*size + 1);
+  fread(buffer, (*size), 1, file);
+  buffer[*size] = '\0';
+  fclose(file);
+  return (void *)buffer;
+}

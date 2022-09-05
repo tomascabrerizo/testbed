@@ -18,7 +18,13 @@
 #define WINDOW_HEIGHT 64
 #endif
 
+
+void core_font_load(char *path);
+
 int main(void) {
+
+  core_font_load("font/font.fnt");
+
   CoreWindow *window = core_window_create("TestBed", WINDOW_WIDTH, WINDOW_HEIGHT);
   Render2D *render = render2d_create();
   render2d_alpha_test(render, true);
@@ -47,7 +53,7 @@ int main(void) {
     render2d_draw_quad(render, 60, 0, 100, 50);
 
     // TODO: char id=65      x=453  y=72   width=46   height=56   xoffset=-7   yoffset=6    xadvance=48   page=0    chnl=0 
-    float scale = 2;
+    float scale = 0.5;
     render2d_draw_texture(render, 0, core_window_get_height(window) - 56*scale, 46*scale, 56*scale);
 
     render2d_end(render);
