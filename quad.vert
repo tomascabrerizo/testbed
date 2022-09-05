@@ -13,7 +13,7 @@ out vec2 pos;
 out vec2 dim;
 out vec2 uvs;
 out float aspect;
-flat out uint flags;
+flat out uint command;
 
 void main() {
   // output variables
@@ -21,7 +21,7 @@ void main() {
   dim = aDim;
   uvs = aUvs;
   aspect = dim.y / dim.x;
-  flags = aFlags;
+  command = aFlags;
   // scale and translate
   vec2 half_dim = aDim * 0.5;
   vec2 vertex = (aVert * half_dim) + half_dim + aPos;

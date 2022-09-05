@@ -4,35 +4,16 @@
 #include "core_type.h"
 #include "core_math.h"
 #include "core_ds.h"
-/* NOTE: This library is a modern OPENGL 3.3 wraper */
 
-/* TODO: program vtretch buffers */
-
-typedef uint32_t RManHandle ;
-
-typedef struct RManRenderer {
-  
-} RManRenderer;
-
-
-typedef struct RManFrameBuffer {
+typedef struct Texture2D {
   unsigned int id;
-} RManFrameBuffer;
+  void *data;
+  uint32_t w, h;
+  uint32_t bpp; /* NOTE: Bytes per pixel */
+} Texture2D;
 
-
-RManRenderer *renderman_render_create(void);
-void renderman_render_destroy(RManRenderer *render);
-
-RManHandle renderman_framebuffer_create(RManRenderer *render);
-void renderman_famebuffer_destroy(RManRenderer *render, RManHandle handle);
-
-void renderman_render_begin(RManRenderer *render);
-void renderman_render_end(RManRenderer *render);
-
-typedef struct RManShader {
-  unsigned int id;
-} RManShader;
-
+Texture2D *render_texture_create_from_file(char *path);
+void render_texture_destroy(Texture2D *texture);
 
 typedef struct Vertex2D {
   float x, y;
@@ -59,6 +40,8 @@ typedef struct Render2D {
   unsigned int resolution_x;
   unsigned int resolution_y;
 
+  Texture2D *font;
+
   /* NOTE: Render commands buffer */
   RenderCommand2D *command_buffer;
   uint64_t command_buffer_size;
@@ -78,6 +61,8 @@ void render2d_begin(Render2D *render);
 void render2d_end(Render2D *render);
 
 void render2d_draw_quad(Render2D *render, int x, int y, int w, int h);
+void render2d_draw_texture(Render2D *render, int x, int y, int w, int h);
 
+void render2d_alpha_test(Render2D *render, bool value);
 
 #endif /* RENDERMAN_H */

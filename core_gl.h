@@ -8,6 +8,12 @@
 #define glDrawPixels glDrawPixelsOld
 #define glReadPixels glReadPixelsOld
 #define glDrawElements glDrawElementsOld
+#define glGenTextures glGenTexturesOld
+#define glBindTexture glBindTextureOld
+#define glTexParameterf glTexParameterfOld
+#define glTexParameteri glTexParameteriOld
+#define glDeleteTextures glDeleteTexturesOld
+#define glTexImage2D glTexImage2DOld 
 #include <GL/gl.h>
 #undef glGetTexImage
 #undef glTexSubImage2D
@@ -15,6 +21,12 @@
 #undef glDrawPixels
 #undef glReadPixels
 #undef glDrawElements
+#undef glGenTextures
+#undef glBindTexture
+#undef glTexParameterf
+#undef glTexParameteri
+#undef glDeleteTextures
+#undef glTexImage2D
 
 /* TODO: Add GL types */
 
@@ -66,7 +78,13 @@
   X(void, glVertexAttribDivisor, (GLuint index, GLuint divisor)) \
   X(void, glUniform2f, (GLint	location, GLfloat	v0, GLfloat	v1)) \
   X(void, glUniform1i, (GLint location, GLint v0)) \
-  X(void, glBufferSubData, (GLenum	target, GLintptr	offset, GLsizeiptr size, const GLvoid *data))
+  X(void, glBufferSubData, (GLenum	target, GLintptr	offset, GLsizeiptr size, const GLvoid *data)) \
+  X(void, glGenTextures, (GLsizei	n, GLuint *textures)) \
+  X(void, glBindTexture, (GLenum	target, GLuint	texture)) \
+  X(void, glTexParameterf, (GLenum target, GLenum	pname, GLfloat	param)) \
+  X(void, glTexParameteri, (GLenum target, GLenum	pname, GLint	param)) \
+  X(void, glDeleteTextures, (GLsizei	n, const GLuint *textures)) \
+  X(void, glTexImage2D, (GLenum target, GLint level, GLint internalFormat, GLsizei width, GLsizei height, GLint border, GLenum format, GLenum type, const GLvoid * data))
 
 #define CORE_GL_PROC(name) CORE_##name##_POC
 

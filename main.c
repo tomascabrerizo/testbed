@@ -21,6 +21,7 @@
 int main(void) {
   CoreWindow *window = core_window_create("TestBed", WINDOW_WIDTH, WINDOW_HEIGHT);
   Render2D *render = render2d_create();
+  render2d_alpha_test(render, true);
   
   bool running = true;
   while(running) {
@@ -43,9 +44,11 @@ int main(void) {
     int pos_x = (core_window_get_width(window) / 2) - (dim_x / 2);
     int pos_y = (core_window_get_height(window) / 2) - (dim_y / 2);
     render2d_draw_quad(render, pos_x, pos_y, dim_x, dim_y);
-    render2d_draw_quad(render, 0, core_window_get_height(window) - 50, 100, 50);
-    render2d_draw_quad(render, 0, 0, 50, 100);
     render2d_draw_quad(render, 60, 0, 100, 50);
+
+    // TODO: char id=65      x=453  y=72   width=46   height=56   xoffset=-7   yoffset=6    xadvance=48   page=0    chnl=0 
+    float scale = 4;
+    render2d_draw_texture(render, 0, core_window_get_height(window) - 56*scale, 46*scale, 56*scale);
 
     render2d_end(render);
     
