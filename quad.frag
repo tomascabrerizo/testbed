@@ -52,7 +52,7 @@ void main() {
   
   } else if(has_flag(command, COMMAND_TEXTURE)) {
     float edge_softness = 1.0;
-    vec3 color = vec3(1.0);
+    vec3 color = vec3(0.0, 1.0, 0.0);
     
     vec2 tex_dim = vec2(512);
     vec2 glyph_off = vec2(453, 72) / tex_dim;
@@ -61,8 +61,8 @@ void main() {
     vec2 tex_uvs = vec2(uvs.x, 1.0 - uvs.y);
     tex_uvs = mix(glyph_off, glyph_off + glyph_dim, tex_uvs); 
     float sdf = texture(tex, tex_uvs).a;
-    float alpha = smoothstep(0, 2*edge_softness, sdf);
+    float alpha = smoothstep(0.5, 0.55, 1.0 - sdf);
 
-    fragment = vec4(color, alpha * 2);
+    fragment = vec4(color, 1.0 - alpha);
   }
 }
