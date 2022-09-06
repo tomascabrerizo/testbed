@@ -16,7 +16,7 @@ bool has_flag(uint flags, uint flag) {
   return (result - ((result / uint(2))*uint(2))) == uint(1);
 }
 
-// from https://iquilezles.org/articles/distfunctions
+/* from https://iquilezles.org/articles/distfunctions */
 float rounded_box_sdf(vec2 center_pos, vec2 half_size, float radius) {
     return length(max(abs(center_pos) - half_size + radius, 0.0)) - radius;
 }

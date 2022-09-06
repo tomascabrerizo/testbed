@@ -1,6 +1,10 @@
 #include "core.h"
+#include "core_ds.h"
+#include "renderman.h"
+
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 
 typedef enum CoreTokenType {
   TOKEN_INVALID,
@@ -8,6 +12,9 @@ typedef enum CoreTokenType {
   TOKEN_STRING,
   TOKEN_IDENTIFIER,
   TOKEN_INT,
+  TOKEN_EQUALS,
+  TOKEN_MINUS,
+  TOKEN_COMMA,
   
   TOKEN_COUNT,
 } CoreTokenType;
@@ -18,6 +25,9 @@ static char *token_str[TOKEN_COUNT] = {
   "TOKEN_STRING",
   "TOKEN_IDENTIFIER",
   "TOKEN_INT",
+  "TOKEN_EQUALS",
+  "TOKEN_MINUS",
+  "TOKEN_COMMA",
 };
 
 typedef struct CoreToken {
@@ -40,6 +50,20 @@ static bool is_alphanumeric(uint8_t c) {
   return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || is_digit(c);
 }
 
+static bool token_is_keyword(CoreToken token, char *keyword) {
+  int token_size = token.end - token.start; 
+  int keyword_size = strlen(keyword);
+  if(token_size != keyword_size) {
+    return false;
+  }
+  for(int i = 0; i < token_size; ++i) {
+    if(token.start[i] != keyword[i]) {
+      return false;
+    }
+  }
+  return true;
+}
+
 static CoreToken token_invalid(void) {
   current.type = TOKEN_INVALID;
   current.end++;
@@ -48,6 +72,24 @@ static CoreToken token_invalid(void) {
 
 static CoreToken token_eof(void) {
   current.type = TOKEN_EOF;
+  current.end++;
+  return current;
+}
+
+static CoreToken token_equal(void) {
+  current.type = TOKEN_EQUALS;
+  current.end++;
+  return current;
+}
+
+static CoreToken token_minus(void) {
+  current.type = TOKEN_MINUS;
+  current.end++;
+  return current;
+}
+
+static CoreToken token_comma(void) {
+  current.type = TOKEN_COMMA;
   current.end++;
   return current;
 }
@@ -93,17 +135,24 @@ static CoreToken next_token(void) {
   ASSERT(current.end != NULL);
   skip_white_space();
   current.start = current.end;
-
-  printf("%c\n", *current.end);
   switch(*current.start) {
     case '"': {
       return token_string();
     } break;
+    case '=': {
+      return token_equal();
+    } break;
+    case '-': {
+      return token_minus();
+    } break;
+    case ',': {
+      return token_comma();
+    } break;
     case 'a': case 'b': case 'c': case 'd': case 'e': case 'f': case 'g': case 'h': case 'i': case 'j': case 'k': case 'l': case 'm': 
     case 'n': case 'o': case 'p': case 'q': case 'r': case 's': case 't': case 'u': case 'v': case 'w': case 'x': case 'y': case 'z':
     case 'A': case 'B': case 'C': case 'D': case 'E': case 'F': case 'G': case 'H': case 'I': case 'J': case 'K': case 'L': case 'M':
-    case 'N': case 'O': case 'P': case 'Q': case 'R': case 'S': case 'T': case 'U': case 'V': case 'W': case 'X': case 'Y': case 'Z': {
-      printf("token identifier\n");
+    case 'N': case 'O': case 'P': case 'Q': case 'R': case 'S': case 'T': case 'U': case 'V': case 'W': case 'X': case 'Y': case 'Z': 
+    case '_': {
       return token_identifier();
     } break;
     case '0': case '1': case '2': case '3': case '4':
@@ -119,21 +168,206 @@ static CoreToken next_token(void) {
   }
 }
 
-void core_font_load(char *path) {
+#define GLYPH_ID_MAX 256
+typedef struct CoreGlyph {
+  uint8_t id;
+  int x;
+  int y;
+  int w;
+  int h;
+  int offset_x;
+  int offset_y;
+  int advance;
+} CoreGlyph;
+
+#define MAX_FACE_NAME_SIZE 64
+typedef struct CoreFont {
+  char face[MAX_FACE_NAME_SIZE];
+  int size;
+  
+  int padding_top;
+  int padding_bottom;
+  int padding_right;
+  int padding_left;
+
+  int line_height;
+  int base;
+
+  struct Texture2D *atlas;
+  int atlas_w;
+  int atlas_h;
+  
+  /* Maybe use a hash table for not ascii fonts */
+  CoreGlyph glyph_table[GLYPH_ID_MAX];
+  int glyph_count;
+} CoreFont;
+
+static CoreToken next_attribute(CoreTokenType assert_type) {
+  CoreToken token = next_token(); 
+  ASSERT(token.type == TOKEN_IDENTIFIER);
+  token = next_token(); 
+  ASSERT(token.type == TOKEN_EQUALS);
+  token = next_token(); 
+  ASSERT(token.type == assert_type);
+  return token;
+}
+
+static int next_attribute_int() {
+  bool negative = false;
+  CoreToken token = next_token(); 
+  ASSERT(token.type == TOKEN_IDENTIFIER);
+  token = next_token(); 
+  ASSERT(token.type == TOKEN_EQUALS);
+  token = next_token(); 
+  if(token.type == TOKEN_MINUS) {
+    token = next_token();
+    negative = true;
+  }
+  ASSERT(token.type == TOKEN_INT);
+  return negative ? -token.value_int : token.value_int;
+}
+
+static CoreToken next_argument(CoreTokenType assert_type) {
+  CoreToken token = next_token();
+  ASSERT(token.type == TOKEN_COMMA);
+  token = next_token();
+  ASSERT(token.type == assert_type);
+  return token;
+}
+
+static void parse_font_info(CoreFont *font) {
+  printf("parsing info\n");
+
+  CoreToken token = next_attribute(TOKEN_STRING);
+  int face_size = CORE_MIN((token.end - token.start - 2), (MAX_FACE_NAME_SIZE-1));
+  memcpy(font->face, (token.start + 1), face_size);
+  font->face[face_size] = '\0';
+  
+  font->size = next_attribute(TOKEN_INT).value_int;
+  /* NOTE: Unused attributes */
+  next_attribute(TOKEN_INT);
+  next_attribute(TOKEN_INT);
+  next_attribute(TOKEN_STRING);
+  next_attribute(TOKEN_INT);
+  next_attribute(TOKEN_INT);
+  next_attribute(TOKEN_INT);
+  next_attribute(TOKEN_INT);
+
+  /* NOTE: Used attributes */
+  font->padding_left   = next_attribute(TOKEN_INT).value_int;
+  font->padding_right  =  next_argument(TOKEN_INT).value_int;
+  font->padding_top    =  next_argument(TOKEN_INT).value_int;
+  font->padding_bottom =  next_argument(TOKEN_INT).value_int;
+
+  /* NOTE: Unused attributes */
+  next_attribute(TOKEN_INT);
+  next_argument(TOKEN_INT);
+}
+
+static void parse_font_common(CoreFont *font) {
+  printf("parsing common\n");
+  font->line_height = next_attribute(TOKEN_INT).value_int;
+  font->base = next_attribute(TOKEN_INT).value_int;
+  font->atlas_w = next_attribute(TOKEN_INT).value_int;
+  font->atlas_h = next_attribute(TOKEN_INT).value_int;
+  /* NOTE: Unused attributes */
+  next_attribute(TOKEN_INT);
+  next_attribute(TOKEN_INT);
+}
+
+static void parse_font_page(CoreFont *font) {
+  printf("parsing page\n");
+  /* NOTE: Unused attributes */
+  next_attribute(TOKEN_INT);
+  next_attribute(TOKEN_STRING);
+  (void)font;
+}
+
+static void parse_font_chars(CoreFont *font) {
+  printf("parsing chars\n");
+  font->glyph_count = next_attribute(TOKEN_INT).value_int;
+}
+
+static void parse_font_char(CoreFont *font) {
+  int index = next_attribute(TOKEN_INT).value_int;
+  CoreGlyph *glyph = font->glyph_table + index;
+  glyph->id = index;
+  glyph->x = next_attribute_int();
+  glyph->y = next_attribute_int();
+  glyph->w = next_attribute_int();
+  glyph->h = next_attribute_int();
+  glyph->offset_x = next_attribute_int();
+  glyph->offset_y = next_attribute_int();
+  glyph->advance = next_attribute_int();
+  /* NOTE: Unused attributes */
+  next_attribute(TOKEN_INT);
+  next_attribute(TOKEN_INT);
+}
+
+static void parse_font_kernings(CoreFont *font) {
+  /* NOTE: Unused attributes */
+  next_attribute(TOKEN_INT);
+  (void)font;
+}
+
+
+CoreFont *core_font_create(char *path) {
+  CoreFont *font = (CoreFont *)malloc(sizeof(*font));
+
   uint64_t size;
   uint8_t *file = core_read_entire_file(path, &size);
-  (void)size;
   current.end = file;
   current.type = TOKEN_INVALID;
   
   while(current.type != TOKEN_EOF) {
     CoreToken token = next_token();
-    printf("-------------------------------------------\n");
-    printf("token type:%s - %d\n", token_str[token.type], token.type);
-    printf("token str: [%.*s]\n", (int)(token.end - token.start), token.start);
-    printf("token value:%d\n", token.value_int);
-    printf("-------------------------------------------\n");
+    
+    if(token_is_keyword(token, "info")) {
+      parse_font_info(font);
+    } else if(token_is_keyword(token, "common")) {
+      parse_font_common(font);
+    } else if(token_is_keyword(token, "page")) {
+      parse_font_page(font);
+    } else if(token_is_keyword(token, "chars")) {
+      parse_font_chars(font);
+    } else if(token_is_keyword(token, "char")) {
+      parse_font_char(font);
+    } else if(token_is_keyword(token, "kernings")) {
+      parse_font_kernings(font);
+    }
+
+    ASSERT(token.type != TOKEN_INVALID);
   }
+  
   free(file);
   /* TODO: Return font infomation */
+  
+  printf("font face:%s, size:%d\n", font->face, font->size);
+  printf("padding_left:%d\n", font->padding_left);
+  printf("padding_right:%d\n", font->padding_right);
+  printf("padding_top:%d\n", font->padding_top);
+  printf("padding_bottom:%d\n", font->padding_bottom);
+  
+  printf("line_height:%d\n", font->line_height);
+  printf("base:%d\n", font->base);
+  printf("atlas_w:%d\n", font->atlas_w);
+  printf("atlas_h:%d\n", font->atlas_h);
+  
+  printf("glyph_count:%d\n", font->glyph_count);
+
+  char index = 'a';
+  CoreGlyph glyph = font->glyph_table[(uint8_t)index];
+  printf("glyph:%c\n", index);
+  printf("w:%d, h:%d, w:%d, h:%d\n", glyph.x, glyph.y, glyph.w, glyph.h);
+  printf("offx:%d, offy:%d, adv:%d\n", glyph.offset_x, glyph.offset_y, glyph.advance);
+
+  return font;
+
+  (void)size;
+  (void)token_str;
+}
+
+void core_font_destroy(CoreFont *font) {
+  render_texture_destroy(font->atlas);
+  free(font);
 }
