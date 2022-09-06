@@ -1,4 +1,5 @@
 #include "core.h"
+#include "core_font.h"
 #include "core_ds.h"
 #include "renderman.h"
 
@@ -168,40 +169,6 @@ static CoreToken next_token(void) {
   }
 }
 
-#define GLYPH_ID_MAX 256
-typedef struct CoreGlyph {
-  uint8_t id;
-  int x;
-  int y;
-  int w;
-  int h;
-  int offset_x;
-  int offset_y;
-  int advance;
-} CoreGlyph;
-
-#define MAX_FACE_NAME_SIZE 64
-typedef struct CoreFont {
-  char face[MAX_FACE_NAME_SIZE];
-  int size;
-  
-  int padding_top;
-  int padding_bottom;
-  int padding_right;
-  int padding_left;
-
-  int line_height;
-  int base;
-
-  struct Texture2D *atlas;
-  int atlas_w;
-  int atlas_h;
-  
-  /* Maybe use a hash table for not ascii fonts */
-  CoreGlyph glyph_table[GLYPH_ID_MAX];
-  int glyph_count;
-} CoreFont;
-
 static CoreToken next_attribute(CoreTokenType assert_type) {
   CoreToken token = next_token(); 
   ASSERT(token.type == TOKEN_IDENTIFIER);
@@ -236,8 +203,6 @@ static CoreToken next_argument(CoreTokenType assert_type) {
 }
 
 static void parse_font_info(CoreFont *font) {
-  printf("parsing info\n");
-
   CoreToken token = next_attribute(TOKEN_STRING);
   int face_size = CORE_MIN((token.end - token.start - 2), (MAX_FACE_NAME_SIZE-1));
   memcpy(font->face, (token.start + 1), face_size);
@@ -265,7 +230,6 @@ static void parse_font_info(CoreFont *font) {
 }
 
 static void parse_font_common(CoreFont *font) {
-  printf("parsing common\n");
   font->line_height = next_attribute(TOKEN_INT).value_int;
   font->base = next_attribute(TOKEN_INT).value_int;
   font->atlas_w = next_attribute(TOKEN_INT).value_int;
@@ -276,7 +240,6 @@ static void parse_font_common(CoreFont *font) {
 }
 
 static void parse_font_page(CoreFont *font) {
-  printf("parsing page\n");
   /* NOTE: Unused attributes */
   next_attribute(TOKEN_INT);
   next_attribute(TOKEN_STRING);
@@ -284,7 +247,6 @@ static void parse_font_page(CoreFont *font) {
 }
 
 static void parse_font_chars(CoreFont *font) {
-  printf("parsing chars\n");
   font->glyph_count = next_attribute(TOKEN_INT).value_int;
 }
 
@@ -312,9 +274,10 @@ static void parse_font_kernings(CoreFont *font) {
 
 
 CoreFont *core_font_create(char *path) {
+  (void)token_str;
   CoreFont *font = (CoreFont *)malloc(sizeof(*font));
 
-  uint64_t size;
+  uint64_t size; (void)size;
   uint8_t *file = core_read_entire_file(path, &size);
   current.end = file;
   current.type = TOKEN_INVALID;
@@ -340,31 +303,7 @@ CoreFont *core_font_create(char *path) {
   }
   
   free(file);
-  /* TODO: Return font infomation */
-  
-  printf("font face:%s, size:%d\n", font->face, font->size);
-  printf("padding_left:%d\n", font->padding_left);
-  printf("padding_right:%d\n", font->padding_right);
-  printf("padding_top:%d\n", font->padding_top);
-  printf("padding_bottom:%d\n", font->padding_bottom);
-  
-  printf("line_height:%d\n", font->line_height);
-  printf("base:%d\n", font->base);
-  printf("atlas_w:%d\n", font->atlas_w);
-  printf("atlas_h:%d\n", font->atlas_h);
-  
-  printf("glyph_count:%d\n", font->glyph_count);
-
-  char index = 'a';
-  CoreGlyph glyph = font->glyph_table[(uint8_t)index];
-  printf("glyph:%c\n", index);
-  printf("w:%d, h:%d, w:%d, h:%d\n", glyph.x, glyph.y, glyph.w, glyph.h);
-  printf("offx:%d, offy:%d, adv:%d\n", glyph.offset_x, glyph.offset_y, glyph.advance);
-
   return font;
-
-  (void)size;
-  (void)token_str;
 }
 
 void core_font_destroy(CoreFont *font) {
