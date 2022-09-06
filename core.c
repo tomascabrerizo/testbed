@@ -214,7 +214,7 @@ CoreState *core_state_get_state(struct CoreWindow *window) {
 void *core_read_entire_file(char *path, uint64_t *size) {
   FILE *file = fopen(path, "rb");
   if(!file) {
-    printf("Fail to load file %s\n", path);
+    printf("[ERROR]: Fail to load file %s\n", path);
     *size = 0;
     fclose(file);
     return 0;

@@ -1,11 +1,11 @@
 #version 330 core
 
-out vec4 fragment;
 in vec2 pos;
 in vec2 dim;
 in vec2 uvs;
 flat in uint command;
-in float aspect;
+
+out vec4 fragment;
 
 #define COMMAND_RECT uint(1)
 #define COMMAND_TEXTURE uint(2)
@@ -25,6 +25,8 @@ uniform int res_x;
 uniform int res_y;
 uniform sampler2D tex;
 
+const vec2 tex_dim = vec2(512);
+
 void main() {
   if(has_flag(command, COMMAND_RECT)) {
     const vec4 bg_color = vec4(0, 0, 0, 1);
@@ -37,7 +39,7 @@ void main() {
     const float edge_softness = 1.0; 
     const float tex = 1.0;
     
-    vec2 coord = uvs * dim;
+    vec2 coord = uvs;
     vec2 center_pos = coord - (dim* 0.5);
 
     float sdf = rounded_box_sdf(center_pos, dim*0.5, r); 
@@ -53,15 +55,12 @@ void main() {
   } else if(has_flag(command, COMMAND_TEXTURE)) {
     const float edge_softness = 0.2;
     const vec3 color = vec3(0.0, 1.0, 0.0);
-    const vec2 tex_dim = vec2(512);
-    const vec2 glyph_off = vec2(453, 72) / tex_dim;
-    const vec2 glyph_dim = vec2(46, 56) / tex_dim;
 
-    vec2 tex_uvs = vec2(uvs.x, 1.0 - uvs.y);
-    tex_uvs = mix(glyph_off, glyph_off + glyph_dim, tex_uvs); 
+    vec2 tex_uvs = uvs / tex_dim;
+    tex_uvs.y = tex_uvs.y;
     
     float sdf = 1.0 - texture(tex, tex_uvs).a;
-    float alpha = 1.0 - smoothstep(0.5, 0.5 + edge_softness, sdf);
+    float alpha = 1.0 - smoothstep(0.4, 0.6 + edge_softness, sdf);
 
     fragment = vec4(color, alpha);
   }

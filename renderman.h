@@ -27,9 +27,12 @@ typedef enum RenderComman2DType {
 
 #define MAX_COMMAND_BUFFER 10000 
 typedef struct RenderCommand2D {
-  float x, y, w, h;
+  V2 des1, des2;
+  V2 src1, src2;
   uint32_t flags;
 } RenderCommand2D;
+
+struct CoreGlyph;
 
 typedef struct Render2D {
   unsigned int vao;
@@ -40,13 +43,15 @@ typedef struct Render2D {
   unsigned int resolution_x;
   unsigned int resolution_y;
 
-  Texture2D *font;
-
   /* NOTE: Render commands buffer */
   RenderCommand2D *command_buffer;
   uint64_t command_buffer_size;
   /* NOTE: Uniform location register */
   CoreMap *uniform_register; 
+
+  /* NOTE: Font rendering */
+  struct CoreFont *font;
+
 } Render2D;
 
 Render2D *render2d_create();
@@ -61,7 +66,9 @@ void render2d_begin(Render2D *render);
 void render2d_end(Render2D *render);
 
 void render2d_draw_quad(Render2D *render, int x, int y, int w, int h);
-void render2d_draw_texture(Render2D *render, int x, int y, int w, int h);
+void render2d_draw_texture(Render2D *render, V2 des1, V2 des2, V2 src1, V2 src2);
+void render2d_draw_glyph(Render2D *render, struct CoreGlyph *glyph, int x, int y, float scale);
+void render2d_draw_text(Render2D *render, char *text, int x, int y, float scale);
 
 void render2d_alpha_test(Render2D *render, bool value);
 

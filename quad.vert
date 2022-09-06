@@ -2,9 +2,12 @@
 
 layout (location = 0) in vec2 aVert;
 layout (location = 1) in vec2 aUvs;
-layout (location = 2) in vec2 aPos;
-layout (location = 3) in vec2 aDim;
-layout (location = 4) in uint aFlags;
+// NOTE: Update per instace 
+layout (location = 2) in vec2 aDestPos1;
+layout (location = 3) in vec2 aDestPos2;
+layout (location = 4) in vec2 aSrcPos1;
+layout (location = 5) in vec2 aSrcPos2;
+layout (location = 6) in uint aFlags;
 
 uniform int res_x;
 uniform int res_y;
@@ -12,23 +15,22 @@ uniform int res_y;
 out vec2 pos;
 out vec2 dim;
 out vec2 uvs;
-out float aspect;
 flat out uint command;
 
 void main() {
-  // output variables
-  pos = aPos;
-  dim = aDim;
-  uvs = aUvs;
-  aspect = dim.y / dim.x;
+  // NOTE: output variables
+  vec2 inv_uvs = vec2(aUvs.x, 1.0 - aUvs.y);
+  pos = aDestPos1;
+  dim = aDestPos2 - aDestPos1;
+  uvs = mix(aSrcPos1, aSrcPos2, inv_uvs);
   command = aFlags;
-  // scale and translate
-  vec2 half_dim = aDim * 0.5;
-  vec2 vertex = (aVert * half_dim) + half_dim + aPos;
-  // scale into [-1, 1] coordinate space
+  // NOTE: scale and translate
+  vec2 half_dim = dim * 0.5;
+  vec2 vertex = (aVert * half_dim) + half_dim + pos;
+  // NOTE: scale into [-1, 1] coordinate space
   vec2 half_res = vec2(float(res_x) * 0.5, float(res_y) * 0.5);
   vec2 screen = (vertex / half_res) - 1;
-  //screen.y = -screen.y; // Invert y axis
+  // NOTE: screen.y = -screen.y; // Invert y axis
   
   gl_Position = vec4(screen, 0, 1.0);
 }

@@ -3,6 +3,7 @@
 #include "renderman.h"
 #include "core.h"
 #include "core_gl.h"
+#include "core_font.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -117,7 +118,7 @@ Texture2D *render_texture_create_from_file(char *path) {
 
     return result;
   } else {
-    printf("Fail to load the texture\n");
+    printf("[ERROR]: Fail to load the texture\n");
     return 0;
   }
 }
@@ -159,8 +160,8 @@ static float quad[] = {
 
 Render2D *render2d_create() {
   Render2D *render = (Render2D *)malloc(sizeof(*render));
-  render->font = render_texture_create_from_file("font/font.bmp");
-  printf("texture w:%d, h:%d\n", render->font->w, render->font->h);
+  
+  render->font = core_font_create("font/font.fnt");
   
   render->program = render_program_create_from_files("quad.vert", "quad.frag");
   
@@ -187,21 +188,30 @@ Render2D *render2d_create() {
   glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(float) *4, (const void *)(2 * sizeof(float)));
   glEnableVertexAttribArray(1);
   
+  /* NOTE: Per instance buffer */
   glGenBuffers(1, &render->vbo_instance);
   glBindBuffer(GL_ARRAY_BUFFER, render->vbo_instance);
   glBufferData(GL_ARRAY_BUFFER, sizeof(RenderCommand2D)*MAX_COMMAND_BUFFER, render->command_buffer, GL_DYNAMIC_DRAW);
   
   glEnableVertexAttribArray(2);
-  glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(RenderCommand2D), (void*)0);
+  glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(RenderCommand2D), (void*)OFFSET_OFF(RenderCommand2D, des1));
   glVertexAttribDivisor(2, 1);  
 
   glEnableVertexAttribArray(3);
-  glVertexAttribPointer(3, 2, GL_FLOAT, GL_FALSE, sizeof(RenderCommand2D), (void*)(2 * sizeof(float)));
+  glVertexAttribPointer(3, 2, GL_FLOAT, GL_FALSE, sizeof(RenderCommand2D), (void*)OFFSET_OFF(RenderCommand2D, des2));
   glVertexAttribDivisor(3, 1);  
 
   glEnableVertexAttribArray(4);
-  glVertexAttribIPointer(4, 1, GL_UNSIGNED_INT, sizeof(RenderCommand2D), (void*)(4 * sizeof(float)));
+  glVertexAttribPointer(4, 2, GL_FLOAT, GL_FALSE, sizeof(RenderCommand2D), (void*)OFFSET_OFF(RenderCommand2D, src1));
   glVertexAttribDivisor(4, 1);  
+
+  glEnableVertexAttribArray(5);
+  glVertexAttribPointer(5, 2, GL_FLOAT, GL_FALSE, sizeof(RenderCommand2D), (void*)OFFSET_OFF(RenderCommand2D, src2));
+  glVertexAttribDivisor(5, 1);  
+
+  glEnableVertexAttribArray(6);
+  glVertexAttribIPointer(6, 1, GL_UNSIGNED_INT, sizeof(RenderCommand2D), (void*)OFFSET_OFF(RenderCommand2D, flags));
+  glVertexAttribDivisor(6, 1);  
   
   glBindBuffer(GL_ARRAY_BUFFER, 0); 
   glBindVertexArray(0);
@@ -210,7 +220,7 @@ Render2D *render2d_create() {
 }
 
 void render2d_destroy(Render2D *render) {
-  render_texture_destroy(render->font);
+  core_font_destroy(render->font);
   core_map_destroy(render->uniform_register);
   free(render->command_buffer);
   free(render);
@@ -225,25 +235,47 @@ static inline RenderCommand2D *render2d_push_command(Render2D *render) {
 
 void render2d_draw_quad(Render2D *render, int x, int y, int w, int h) {
   RenderCommand2D *command = render2d_push_command(render);
+  command->des1 = v2(x, y);
+  command->des2 = v2(x + w, y + h);
+  command->src1 = v2(0.0, 0.0);
+  command->src2 = v2(w, h);
   command->flags = COMMAND_RECT;
-  command->x = x;
-  command->y = y;
-  command->w = w;
-  command->h = h;
 }
 
-void render2d_draw_texture(Render2D *render, int x, int y, int w, int h) {
+void render2d_draw_texture(Render2D *render, V2 des1, V2 des2, V2 src1, V2 src2) {
   RenderCommand2D *command = render2d_push_command(render);
+  command->des1 = des1;
+  command->des2 = des2;
+  command->src1 = src1;
+  command->src2 = src2;
   command->flags = COMMAND_TEXTURE;
-  command->x = x;
-  command->y = y;
-  command->w = w;
-  command->h = h;
+}
+
+void render2d_draw_glyph(Render2D *render, CoreGlyph *glyph, int x, int y, float scale) {
+  /* TODO: probrably shoud take padding attribute in cosideration */
+  CoreFont *font = render->font;
+  float pos_y = y + (font->base + (glyph->h + glyph->offset_y)) * scale;
+  float pos_x = x + glyph->offset_x * scale;
+
+  V2 des1 = v2(pos_x, pos_y);
+  V2 des2 = v2(pos_x + glyph->w * scale, pos_y + glyph->h * scale);
+  V2 src1 = v2(glyph->x, glyph->y);
+  V2 src2 = v2(glyph->x + glyph->w, glyph->y + glyph->h);
+  render2d_draw_texture(render, des1, des2, src1, src2);
+}
+
+void render2d_draw_text(Render2D *render, char *text, int x, int y, float scale) {
+  int text_size = strlen(text);
+  for(int i = 0; i < text_size; ++i) {
+    CoreGlyph *glyph = render->font->glyph_table + text[i];
+    render2d_draw_glyph(render, glyph, x, y, scale);
+    x += (glyph->advance * scale);
+  }
 }
 
 void render2d_buffer_flush(Render2D *render) {
   /* NOTE: Update command buffer instance */
-  glBindTexture(GL_TEXTURE_2D, render->font->id);
+  glBindTexture(GL_TEXTURE_2D, render->font->atlas->id);
   glBindBuffer(GL_ARRAY_BUFFER, render->vbo_instance);
   glBufferSubData(GL_ARRAY_BUFFER, 0, render->command_buffer_size*sizeof(RenderCommand2D), (void *)render->command_buffer);
   glBindBuffer(GL_ARRAY_BUFFER, 0);

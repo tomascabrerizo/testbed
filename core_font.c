@@ -242,8 +242,11 @@ static void parse_font_common(CoreFont *font) {
 static void parse_font_page(CoreFont *font) {
   /* NOTE: Unused attributes */
   next_attribute(TOKEN_INT);
-  next_attribute(TOKEN_STRING);
-  (void)font;
+  /* NOTE: Texture file name */ 
+  CoreToken token = next_attribute(TOKEN_STRING);
+  int name_size = CORE_MIN((token.end - token.start - 2), (MAX_FACE_NAME_SIZE-1));
+  memcpy(font->atlas_file_name, (token.start + 1), name_size);
+  font->atlas_file_name[name_size] = '\0';
 }
 
 static void parse_font_chars(CoreFont *font) {
@@ -303,6 +306,21 @@ CoreFont *core_font_create(char *path) {
   }
   
   free(file);
+  
+  /* NOTE: Create font texture */
+#define PATH_SIZE 256
+  char *folder = "font/"; /* TODO: Scan path variable to search the container folder */
+  int folder_len = strlen(folder);
+  int name_len = strlen(font->atlas_file_name);
+  ASSERT(folder_len + name_len < PATH_SIZE);
+  char path_name[PATH_SIZE];
+  memcpy(path_name, folder, folder_len);
+  memcpy(path_name + folder_len, font->atlas_file_name, name_len);
+  path_name[folder_len + name_len] = '\0';
+#undef PATH_SIZE 
+  printf("%s\n", path_name);
+  font->atlas = render_texture_create_from_file(path_name);
+
   return font;
 }
 

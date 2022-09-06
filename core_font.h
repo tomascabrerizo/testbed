@@ -16,6 +16,7 @@ typedef struct CoreGlyph {
 } CoreGlyph;
 
 #define MAX_FACE_NAME_SIZE 64
+#define MAX_ATLAS_FILE_NAME 256 
 typedef struct CoreFont {
   char face[MAX_FACE_NAME_SIZE];
   int size;
@@ -28,6 +29,7 @@ typedef struct CoreFont {
   int line_height;
   int base;
 
+  char atlas_file_name[MAX_ATLAS_FILE_NAME];
   struct Texture2D *atlas;
   int atlas_w;
   int atlas_h;

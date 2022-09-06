@@ -9,6 +9,16 @@ static inline float to_rad(float a) {
   return a * CORE_PI / 180.0f;
 }
 
+typedef struct V2 {
+  float x;
+  float y;
+} V2;
+
+static inline V2 v2(float x, float y) {
+  return (V2){x, y};
+}
+/* TODO: Implements V2 operations */
+
 typedef struct V3 {
   float x;
   float y;
