@@ -21,6 +21,11 @@ typedef struct CoreState {
   int width;
   int height;
 
+  int mouse_x;
+  int mouse_y;
+  bool mouse_button_down;
+  bool mouse_button_up;
+
 } CoreState;
 
 CoreState *core_state_get_state(struct CoreWindow *window);

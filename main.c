@@ -18,6 +18,9 @@
 #define WINDOW_HEIGHT 64
 #endif
 
+
+bool f_do_button(struct CoreState *state, struct Render2D *render, char *text, int x, int y, int w, int h);
+
 int main(void) {
 
 
@@ -40,18 +43,12 @@ int main(void) {
     }
     
     render2d_begin(render);
-
-    int dim_x = 400;
-    int dim_y = 200;
-    int pos_x = (core_window_get_width(window) / 2) - (dim_x / 2);
-    int pos_y = (core_window_get_height(window) / 2) - (dim_y / 2);
-    render2d_draw_quad(render, pos_x, pos_y, dim_x, dim_y);
-    render2d_draw_quad(render, 0, 0, 200, 100);
-    float scale = 0.4f;
-    render2d_draw_text(render, "Tomas Cabrerizo", 300, 10, scale);
-
+    if(f_do_button(state, render, "button1", 10, 10, 70, 35)) {
+    }
+    if(f_do_button(state, render, "button2", 10, 45, 170, 135)) {
+    }
     render2d_end(render);
-    
+
     core_window_swap_buffers(window);
   }
   

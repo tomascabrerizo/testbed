@@ -208,6 +208,16 @@ CoreState *core_state_get_state(struct CoreWindow *window) {
       } break;
     }
   }
+
+  Window inwin;
+  Window inchildwin;
+  int rootx, rooty;
+  int childx, childy;
+  unsigned int mask;
+  XQueryPointer(window->d, window->w, &inwin, &inchildwin, &rootx, &rooty, &childx, &childy, &mask);
+  window->state.mouse_x = childx;
+  window->state.mouse_y = childy;
+
   return &window->state;
 }
 

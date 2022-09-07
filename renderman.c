@@ -211,7 +211,11 @@ Render2D *render2d_create() {
 
   glEnableVertexAttribArray(6);
   glVertexAttribIPointer(6, 1, GL_UNSIGNED_INT, sizeof(RenderCommand2D), (void*)OFFSET_OFF(RenderCommand2D, flags));
-  glVertexAttribDivisor(6, 1);  
+  glVertexAttribDivisor(6, 1);
+  
+  glEnableVertexAttribArray(7);
+  glVertexAttribPointer(7, 1, GL_FLOAT, GL_FALSE, sizeof(RenderCommand2D), (void*)OFFSET_OFF(RenderCommand2D, interpolator));
+  glVertexAttribDivisor(7, 1);  
   
   glBindBuffer(GL_ARRAY_BUFFER, 0); 
   glBindVertexArray(0);
@@ -233,13 +237,14 @@ static inline RenderCommand2D *render2d_push_command(Render2D *render) {
   return render->command_buffer + render->command_buffer_size++;
 }
 
-void render2d_draw_quad(Render2D *render, int x, int y, int w, int h) {
+void render2d_draw_quad(Render2D *render, int x, int y, int w, int h, float interpolator) {
   RenderCommand2D *command = render2d_push_command(render);
   command->des1 = v2(x, y);
   command->des2 = v2(x + w, y + h);
   command->src1 = v2(0.0, 0.0);
   command->src2 = v2(w, h);
   command->flags = COMMAND_RECT;
+  command->interpolator = interpolator;
 }
 
 void render2d_draw_texture(Render2D *render, V2 des1, V2 des2, V2 src1, V2 src2) {
@@ -249,13 +254,15 @@ void render2d_draw_texture(Render2D *render, V2 des1, V2 des2, V2 src1, V2 src2)
   command->src1 = src1;
   command->src2 = src2;
   command->flags = COMMAND_TEXTURE;
+  command->interpolator = 0;
 }
 
 void render2d_draw_glyph(Render2D *render, CoreGlyph *glyph, int x, int y, float scale) {
   /* TODO: probrably shoud take padding attribute in cosideration */
-  CoreFont *font = render->font;
-  float pos_y = y + (font->base + (glyph->h + glyph->offset_y)) * scale;
-  float pos_x = x + glyph->offset_x * scale;
+  CoreFont *font = render->font; (void)font;
+
+  float pos_y = y + (glyph->offset_y * scale);
+  float pos_x = x + (glyph->offset_x * scale);
 
   V2 des1 = v2(pos_x, pos_y);
   V2 des2 = v2(pos_x + glyph->w * scale, pos_y + glyph->h * scale);
@@ -269,8 +276,19 @@ void render2d_draw_text(Render2D *render, char *text, int x, int y, float scale)
   for(int i = 0; i < text_size; ++i) {
     CoreGlyph *glyph = render->font->glyph_table + text[i];
     render2d_draw_glyph(render, glyph, x, y, scale);
-    x += (glyph->advance * scale);
+    x += (glyph->advance * 0.75f * scale);
   }
+}
+
+V2 render2d_get_text_dim(Render2D *render, char *text, float scale) {
+  V2 dim = {0};
+  int text_size = strlen(text);
+  for(int i = 0; i < text_size; ++i) {
+    CoreGlyph *glyph = render->font->glyph_table + text[i];
+    dim.x += (glyph->advance * scale * 0.75f);
+    dim.y = CORE_MAX(dim.y, glyph->h * scale);
+  }
+  return dim;
 }
 
 void render2d_buffer_flush(Render2D *render) {

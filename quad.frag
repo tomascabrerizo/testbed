@@ -4,6 +4,7 @@ in vec2 pos;
 in vec2 dim;
 in vec2 uvs;
 flat in uint command;
+in float interpolator;
 
 out vec4 fragment;
 
@@ -30,8 +31,11 @@ const vec2 tex_dim = vec2(512);
 void main() {
   if(has_flag(command, COMMAND_RECT)) {
     const vec4 bg_color = vec4(0, 0, 0, 1);
-    const vec3 border_color = vec3(0.27, 0.44, 0.70);
+    vec3 border_color = vec3(0.27, 0.44, 0.70);
     vec3 color = vec3(0.25, 0.37, 0.55);
+    vec3 color2 = vec3(0.05);
+    color = mix(color, color + color2, interpolator);
+    border_color = mix(border_color, border_color + color2, interpolator);
 
     /* TODO: all this information should come in vertex attributes */
     const float r = 10.0;
@@ -56,12 +60,12 @@ void main() {
     const float edge_softness = 0.2;
     const vec3 color = vec3(0.0, 1.0, 0.0);
 
-    vec2 tex_uvs = uvs / tex_dim;
-    tex_uvs.y = tex_uvs.y;
+    vec2 tex_uvs = vec2(uvs) / tex_dim;
     
     float sdf = 1.0 - texture(tex, tex_uvs).a;
-    float alpha = 1.0 - smoothstep(0.4, 0.6 + edge_softness, sdf);
+    float alpha = 1.0 - smoothstep(0.4, 0.5 + edge_softness, sdf);
 
     fragment = vec4(color, alpha);
+    //fragment = vec4(vec3(alpha), 1.0);
   }
 }
