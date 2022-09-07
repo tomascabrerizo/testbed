@@ -24,7 +24,6 @@ typedef struct CoreState {
   int mouse_x;
   int mouse_y;
   bool mouse_button_down;
-  bool mouse_button_up;
 
 } CoreState;
 

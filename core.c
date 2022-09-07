@@ -100,7 +100,7 @@ CoreWindow *core_window_create(char *name, int width, int height) {
   swa.colormap = window->cm;
   swa.background_pixmap = None ;
   swa.border_pixel      = 0;
-  swa.event_mask        = StructureNotifyMask;
+  swa.event_mask        = StructureNotifyMask|ButtonPressMask|ButtonReleaseMask;
 
   window->w = XCreateWindow(window->d, RootWindow(window->d, vi->screen), 
                             0, 0, window->width, window->height, 0, vi->depth, InputOutput, vi->visual, 
@@ -186,6 +186,16 @@ CoreState *core_state_get_state(struct CoreWindow *window) {
     XNextEvent(window->d, &event);
     switch(event.type) {
       case Expose: {
+      } break;
+      case ButtonPress: {
+        if(event.xbutton.button == 1) {
+          window->state.mouse_button_down = true;
+        }
+      } break;
+      case ButtonRelease: {
+        if(event.xbutton.button == 1) {
+          window->state.mouse_button_down = false;
+        }
       } break;
       case ConfigureNotify: {
         XConfigureEvent xce = event.xconfigure;

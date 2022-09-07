@@ -4,6 +4,9 @@
 #include "core_math.h"
 #include "renderman.h"
 
+#include <stdlib.h>
+#include <string.h>
+
 typedef struct FRect {
   int left;
   int right;
@@ -47,17 +50,67 @@ bool f_rect_is_valid(FRect a) {
   return ((a.right - a.left) >= 0) && ((a.bottom - a.top) >= 0);
 }
 
-bool f_do_button(struct CoreState *state, struct Render2D *render, char *text, int x, int y, int w, int h) {
+typedef struct FramesUi {
+  struct CoreState *state;
+  struct Render2D *render;
+  uint64_t hot;
+  uint64_t active;
+} FramesUi;
+
+FramesUi *f_ui_create(Render2D *render) {
+  FramesUi *ui = malloc(sizeof(*ui));
+  memset(ui, 0, sizeof(*ui));
+  
+  ui->render = render;
+
+  return ui;
+}
+
+void f_ui_destroy(struct FramesUi *ui) {
+  free(ui);
+}
+
+void f_ui_set_state(struct FramesUi *ui, struct CoreState *state) {
+  ui->state = state;
+}
+
+static uint64_t ui_get_id(char *text) {
+  uint64_t result = core_hash64((const void *)text, strlen(text), CORE_MAP_SEED);
+  ASSERT(result != 0);
+  return result;
+}
+
+bool f_do_button(FramesUi *ui, char *text, int x, int y, int w, int h) {
+  bool pressed = false;
+  uint64_t id = ui_get_id(text); 
+  
   float scale = 0.25f;
-  V2 dim = render2d_get_text_dim(render, text, scale); (void)dim;
+  V2 dim = render2d_get_text_dim(ui->render, text, scale); (void)dim;
 
   int pos_x = (x + w/2) - (dim.x / 2);
   int pos_y = (y + h/2) - (dim.y / 2);
   
   FRect rect = (FRect){x, x + w, y, y + h};
-  bool inside = f_rect_contains(rect, state->mouse_x, state->mouse_y); 
+  bool inside = f_rect_contains(rect, ui->state->mouse_x, ui->state->mouse_y);
 
-  render2d_draw_quad(render, x, y, w, h, (float)(inside == true)); 
-  render2d_draw_text(render, text, pos_x, pos_y, scale);
-  return false;
+  if(inside && !ui->state->mouse_button_down) {
+    ui->hot = id;
+  }
+
+  if(!inside && ui->hot == id) {
+    ui->hot = 0;
+  }
+  
+  if(ui->hot == id && ui->state->mouse_button_down) {
+    ui->active = id;
+  }
+
+  if(ui->active == id && !ui->state->mouse_button_down) {
+    pressed = ui->hot == id;
+    ui->active = 0;
+  }
+  
+  render2d_draw_quad(ui->render, x, y, w, h, (float)(ui->active == id)); 
+  render2d_draw_text(ui->render, text, pos_x, pos_y, scale);
+  return pressed;
 }
