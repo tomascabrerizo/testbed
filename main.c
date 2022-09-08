@@ -95,6 +95,7 @@ typedef struct Rect {
 } Rect;
 
 struct RectContainer;
+
 typedef struct VSplitter {
   float position;
   Rect dim;
@@ -141,11 +142,18 @@ void draw_rect(struct Render2D *render, Rect rect, V3 color) {
 
 void draw_container(struct Render2D *render, RectContainer *container) {
   V3 rect_color = v3(0.2f, 0.2f, 0.2f);
-  V3 split_color = v3(0.5f, 0.5f, 0.5f);
+  V3 split_color = v3(0.0f, 1.0f, 0.0f);
   ASSERT(container);
   switch(container->type) {
     case CONTAINER_RECT: { 
-      draw_rect(render, container->rect, rect_color);
+      draw_rect(render, container->rect, v3(0.1, 0.1, 0.1));
+      int border = 8;
+      Rect rect = container->rect;
+      rect.l += border;
+      rect.t += border;
+      rect.r -= border;
+      rect.b -= border;
+      draw_rect(render, rect, rect_color);
     } break;
     case CONTAINER_VSPLIT: { 
       draw_container(render, container->split.r); 
@@ -155,52 +163,63 @@ void draw_container(struct Render2D *render, RectContainer *container) {
   }
 }
 
+void calculate_vsplit_size(RectContainer *container);
+void update_container(RectContainer *container) {
+  ASSERT(container);
+  if(container->type == CONTAINER_VSPLIT) { 
+      calculate_vsplit_size(container);
+      update_container(container->split.l);
+      update_container(container->split.r);
+  }
+}
+
 void docker_update(struct CoreWindow *window) {
   docker.root.rect.l = 0;
   docker.root.rect.r = core_window_get_width(window);
   docker.root.rect.t = 0;
   docker.root.rect.b = core_window_get_height(window);
 
-  //update_container(&docker.root);
+  update_container(&docker.root);
 }
 
 void docker_render(struct Render2D *render) {
   draw_container(render, &docker.root);
 }
 
-void calculate_vsplit_size(RectContainer *container) {
-  (void)container;
-}
-
 void dock_split_vertical(RectContainer *container) {
   ASSERT(container);
   ASSERT(container->type ==  CONTAINER_RECT);
-  Rect old_rect = container->rect;
-  int old_dim = container->rect.r - container->rect.l;
-  int split_dim = 2;
   
   container->type = CONTAINER_VSPLIT;
   container->split.position = 0.5f;
-  container->split.dim = container->rect; 
-  container->split.dim.l = old_dim *  container->split.position - split_dim * 0.5;; 
-  container->split.dim.r = container->split.dim.l + split_dim; 
 
-  RectContainer *r = (RectContainer *)malloc(sizeof(RectContainer));
-  RectContainer *l = (RectContainer *)malloc(sizeof(RectContainer));
-  memset(r, 0, sizeof(*r));
-  memset(l, 0, sizeof(*l));
-
-  int rect_dim = old_dim * container->split.position;
-  r->type = CONTAINER_RECT;
-  r->rect = old_rect;
-  r->rect.r -= rect_dim;
+  container->split.r = (RectContainer *)malloc(sizeof(RectContainer));
+  container->split.l = (RectContainer *)malloc(sizeof(RectContainer));
+  container->split.r->type = CONTAINER_RECT;
+  container->split.l->type = CONTAINER_RECT;
   
-  l->type = CONTAINER_RECT;
-  l->rect = old_rect;
-  l->rect.l += rect_dim;
+  //calculate_vsplit_size(container);
+}
 
-  container->split.r = r;
-  container->split.l = l;
+void calculate_vsplit_size(RectContainer *container) {
+  ASSERT(container->type == CONTAINER_VSPLIT); 
+  Rect rect = container->rect;
+  int rect_dim = (rect.r - rect.l);
+  /* NOTE: rects position */
+  Rect r = rect;
+  Rect l = rect;
+  l.r -= rect_dim * (1.0f - container->split.position);
+  r.l += rect_dim * container->split.position;
+  /* NOTE: split rect */
+  int split_dim = 4;
+  Rect split_rect = rect;
+  /* TODO: Make f32_lerp function */
+  split_rect.l = rect.l*(1.0f - container->split.position) + rect.r*container->split.position - (split_dim/2);
+  split_rect.r = split_rect.l + split_dim;
+
+  container->split.r->rect = r;
+  container->split.l->rect = l;
+  container->split.dim = split_rect;
 }
 
 void frames_dock_test(struct CoreWindow *window, struct Render2D *render) {
@@ -208,6 +227,9 @@ void frames_dock_test(struct CoreWindow *window, struct Render2D *render) {
   if(!init) {
     dock_init(window);
     dock_split_vertical(&docker.root);
+    docker.root.split.position = 0.4f;
+    dock_split_vertical(docker.root.split.r);
+    docker.root.split.r->split.position = 0.7f;
     init = true;
   }
   docker_update(window);
