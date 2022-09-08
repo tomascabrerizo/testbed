@@ -33,12 +33,12 @@ void main() {
     const vec4 bg_color = vec4(0, 0, 0, 1);
     vec3 border_color = vec3(0.27, 0.44, 0.70);
     vec3 color = vec3(0.25, 0.37, 0.55);
-    vec3 color2 = vec3(0.05);
-    color = mix(color, color + color2, interpolator);
-    border_color = mix(border_color, border_color + color2, interpolator);
+    vec3 color2 = vec3(0.1);
+    color = mix(color, color - color2, interpolator);
+    border_color = mix(border_color, border_color - color2, interpolator);
 
     /* TODO: all this information should come in vertex attributes */
-    const float r = 10.0;
+    const float r = 7.0;
     const float border_radius = 2.0;
     const float edge_softness = 1.0; 
     const float tex = 1.0;

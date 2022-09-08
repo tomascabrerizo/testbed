@@ -23,8 +23,11 @@ struct FramesUi;
 struct FramesUi *f_ui_create(struct Render2D *render);
 void f_ui_destroy(struct FramesUi *ui);
 void f_ui_set_state(struct FramesUi *ui, struct CoreState *state);
+void print_hot(struct FramesUi *ui);
 
 bool f_do_button(struct FramesUi *ui, char *text, int x, int y, int w, int h);
+void f_do_label(struct FramesUi *ui, char *text, int x, int y);
+bool f_do_checkbox(struct FramesUi *ui, char *text, int x, int y, bool *checked);
 
 int main(void) {
 
@@ -32,7 +35,10 @@ int main(void) {
   CoreWindow *window = core_window_create("TestBed", WINDOW_WIDTH, WINDOW_HEIGHT);
   Render2D *render = render2d_create();
   render2d_alpha_test(render, true);
+  
+  /* NOTE: UI state */
   struct FramesUi *ui = f_ui_create(render);
+  bool checked = false; (void)checked;
 
   bool running = true;
   while(running) {
@@ -50,12 +56,18 @@ int main(void) {
     }
     
     render2d_begin(render);
-    if(f_do_button(ui, "button1", 10, 10, 70, 35)) {
-      printf("button1 clicked\n");
-    }
-    if(f_do_button(ui, "button2", 10, 45, 170, 135)) {
-      printf("button2 clicked\n");
-    }
+    
+
+    f_do_label(ui, "Label:", 20, 100);
+    f_do_label(ui, "Im a Label.", 145, 100);
+
+    f_do_label(ui, "Button:", 20, 140);
+    f_do_button(ui, "Button:", 145, 135, 120, 30);
+
+
+    f_do_label(ui, "Checked Box:", 20, 180);
+    f_do_checkbox(ui, "checkbox", 145, 180, &checked);
+
     render2d_end(render);
 
     core_window_swap_buffers(window);

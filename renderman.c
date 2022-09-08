@@ -161,7 +161,8 @@ static float quad[] = {
 Render2D *render2d_create() {
   Render2D *render = (Render2D *)malloc(sizeof(*render));
   
-  render->font = core_font_create("font/font.fnt");
+  render->font = core_font_create("font/ubuntu_mono.fnt");
+  printf("face:%s\n", render->font->face);
   
   render->program = render_program_create_from_files("quad.vert", "quad.frag");
   

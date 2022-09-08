@@ -74,7 +74,7 @@ void f_ui_set_state(struct FramesUi *ui, struct CoreState *state) {
   ui->state = state;
 }
 
-static uint64_t ui_get_id(char *text) {
+static inline uint64_t ui_get_id(char *text) {
   uint64_t result = core_hash64((const void *)text, strlen(text), CORE_MAP_SEED);
   ASSERT(result != 0);
   return result;
@@ -84,7 +84,7 @@ bool f_do_button(FramesUi *ui, char *text, int x, int y, int w, int h) {
   bool pressed = false;
   uint64_t id = ui_get_id(text); 
   
-  float scale = 0.25f;
+  float scale = 0.25f; /* TODO: this text scale should be in ui state struct */
   V2 dim = render2d_get_text_dim(ui->render, text, scale); (void)dim;
 
   int pos_x = (x + w/2) - (dim.x / 2);
@@ -92,7 +92,8 @@ bool f_do_button(FramesUi *ui, char *text, int x, int y, int w, int h) {
   
   FRect rect = (FRect){x, x + w, y, y + h};
   bool inside = f_rect_contains(rect, ui->state->mouse_x, ui->state->mouse_y);
-
+  
+  /* TODO: This is clickeable code, probably make a specific function */
   if(inside && !ui->state->mouse_button_down) {
     ui->hot = id;
   }
@@ -113,4 +114,54 @@ bool f_do_button(FramesUi *ui, char *text, int x, int y, int w, int h) {
   render2d_draw_quad(ui->render, x, y, w, h, (float)(ui->active == id)); 
   render2d_draw_text(ui->render, text, pos_x, pos_y, scale);
   return pressed;
+}
+
+void f_do_label(FramesUi *ui, char *text, int x, int y) {
+  float scale = 0.25f; /* TODO: this text scale should be in ui state struct */
+  render2d_draw_text(ui->render, text, x, y, scale);
+}
+
+bool f_do_checkbox(FramesUi *ui, char *text, int x, int y, bool *checked) {
+  uint64_t id = ui_get_id(text);
+  float scale = 0.25f; /* TODO: this text scale should be in ui state struct */
+  FRect rect = (FRect){x, x+20, y, y+20};
+  bool inside = f_rect_contains(rect, ui->state->mouse_x, ui->state->mouse_y);
+
+  /* TODO: This is clickeable code, probably make a specific function */
+  if(inside && !ui->state->mouse_button_down) {
+    ui->hot = id;
+  }
+
+  if(!inside && ui->hot == id) {
+    ui->hot = 0;
+  }
+  
+  if(ui->hot == id && ui->state->mouse_button_down) {
+    ui->active = id;
+  }
+
+  if(ui->active == id && !ui->state->mouse_button_down) {
+    if(ui->hot == id) {
+      *checked = !*checked;
+    }
+    ui->active = 0;
+  }
+
+  render2d_draw_quad(ui->render, x, y, 20, 20, (float)(*checked == false));
+  render2d_draw_text(ui->render, text, x + 25, y, scale);
+
+  return *checked;
+}
+
+/* TODO: UI elements to do 
+  - slider
+  - text edit
+  - progress bar
+  - Dropdown menu
+  - Menu bar
+  - RadioButton
+*/
+
+void print_hot(FramesUi *ui) {
+    printf("hot:%ld\n", ui->hot);
 }
