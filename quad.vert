@@ -9,6 +9,7 @@ layout (location = 4) in vec2 aSrcPos1;
 layout (location = 5) in vec2 aSrcPos2;
 layout (location = 6) in uint aFlags;
 layout (location = 7) in float aInterpolator;
+layout (location = 8) in vec3 aColor;
 
 uniform int res_x;
 uniform int res_y;
@@ -16,6 +17,7 @@ uniform int res_y;
 out vec2 pos;
 out vec2 dim;
 out vec2 uvs;
+out vec3 color;
 flat out uint command;
 out float interpolator;
 
@@ -24,6 +26,7 @@ void main() {
   pos = aDestPos1;
   dim = aDestPos2 - aDestPos1;
   uvs = mix(aSrcPos1, aSrcPos2, aUvs);
+  color = aColor;
   command = aFlags;
   interpolator = aInterpolator;
   // NOTE: scale and translate

@@ -164,7 +164,7 @@ Render2D *render2d_create() {
   render->font = core_font_create("font/ubuntu_mono.fnt");
   printf("face:%s\n", render->font->face);
   
-  render->program = render_program_create_from_files("quad.vert", "quad.frag");
+  render->program = render_program_create_from_files("quad.vert", "quad_simple.frag");
   
   /* NOTE: Setup uniform location hash table */
   render->uniform_register = core_map_create();
@@ -217,6 +217,10 @@ Render2D *render2d_create() {
   glEnableVertexAttribArray(7);
   glVertexAttribPointer(7, 1, GL_FLOAT, GL_FALSE, sizeof(RenderCommand2D), (void*)OFFSET_OFF(RenderCommand2D, interpolator));
   glVertexAttribDivisor(7, 1);  
+
+  glEnableVertexAttribArray(8);
+  glVertexAttribPointer(8, 3, GL_FLOAT, GL_FALSE, sizeof(RenderCommand2D), (void*)OFFSET_OFF(RenderCommand2D, color));
+  glVertexAttribDivisor(8, 1);  
   
   glBindBuffer(GL_ARRAY_BUFFER, 0); 
   glBindVertexArray(0);
@@ -238,7 +242,7 @@ static inline RenderCommand2D *render2d_push_command(Render2D *render) {
   return render->command_buffer + render->command_buffer_size++;
 }
 
-void render2d_draw_quad(Render2D *render, int x, int y, int w, int h, float interpolator) {
+void render2d_draw_quad(Render2D *render, int x, int y, int w, int h, float interpolator, V3 color) {
   RenderCommand2D *command = render2d_push_command(render);
   command->des1 = v2(x, y);
   command->des2 = v2(x + w, y + h);
@@ -246,9 +250,10 @@ void render2d_draw_quad(Render2D *render, int x, int y, int w, int h, float inte
   command->src2 = v2(w, h);
   command->flags = COMMAND_RECT;
   command->interpolator = interpolator;
+  command->color = color;
 }
 
-void render2d_draw_texture(Render2D *render, V2 des1, V2 des2, V2 src1, V2 src2) {
+void render2d_draw_texture(Render2D *render, V2 des1, V2 des2, V2 src1, V2 src2, V3 color) {
   RenderCommand2D *command = render2d_push_command(render);
   command->des1 = des1;
   command->des2 = des2;
@@ -256,9 +261,10 @@ void render2d_draw_texture(Render2D *render, V2 des1, V2 des2, V2 src1, V2 src2)
   command->src2 = src2;
   command->flags = COMMAND_TEXTURE;
   command->interpolator = 0;
+  command->color = color;
 }
 
-void render2d_draw_glyph(Render2D *render, CoreGlyph *glyph, int x, int y, float scale) {
+void render2d_draw_glyph(Render2D *render, CoreGlyph *glyph, int x, int y, float scale, V3 color) {
   /* TODO: probrably shoud take padding attribute in cosideration */
   CoreFont *font = render->font; (void)font;
 
@@ -269,14 +275,14 @@ void render2d_draw_glyph(Render2D *render, CoreGlyph *glyph, int x, int y, float
   V2 des2 = v2(pos_x + glyph->w * scale, pos_y + glyph->h * scale);
   V2 src1 = v2(glyph->x, glyph->y);
   V2 src2 = v2(glyph->x + glyph->w, glyph->y + glyph->h);
-  render2d_draw_texture(render, des1, des2, src1, src2);
+  render2d_draw_texture(render, des1, des2, src1, src2, color);
 }
 
-void render2d_draw_text(Render2D *render, char *text, int x, int y, float scale) {
+void render2d_draw_text(Render2D *render, char *text, int x, int y, float scale, V3 color) {
   int text_size = strlen(text);
   for(int i = 0; i < text_size; ++i) {
     CoreGlyph *glyph = render->font->glyph_table + text[i];
-    render2d_draw_glyph(render, glyph, x, y, scale);
+    render2d_draw_glyph(render, glyph, x, y, scale, color);
     x += (glyph->advance * 0.75f * scale);
   }
 }

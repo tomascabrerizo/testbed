@@ -31,6 +31,7 @@ typedef struct RenderCommand2D {
   V2 src1, src2;
   uint32_t flags;
   float interpolator;
+  V3 color;
 } RenderCommand2D;
 
 struct CoreGlyph;
@@ -66,10 +67,10 @@ void render2d_buffer_flush(Render2D *render);
 void render2d_begin(Render2D *render);
 void render2d_end(Render2D *render);
 
-void render2d_draw_quad(Render2D *render, int x, int y, int w, int h, float interpolator);
-void render2d_draw_texture(Render2D *render, V2 des1, V2 des2, V2 src1, V2 src2);
-void render2d_draw_glyph(Render2D *render, struct CoreGlyph *glyph, int x, int y, float scale);
-void render2d_draw_text(Render2D *render, char *text, int x, int y, float scale);
+void render2d_draw_quad(Render2D *render, int x, int y, int w, int h, float interpolator, V3 color);
+void render2d_draw_texture(Render2D *render, V2 des1, V2 des2, V2 src1, V2 src2, V3 color);
+void render2d_draw_glyph(Render2D *render, struct CoreGlyph *glyph, int x, int y, float scale, V3 color);
+void render2d_draw_text(Render2D *render, char *text, int x, int y, float scale, V3 color);
 
 V2 render2d_get_text_dim(Render2D *render, char *text, float scale);
 

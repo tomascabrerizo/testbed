@@ -82,7 +82,8 @@ static inline uint64_t ui_get_id(char *text) {
 
 bool f_do_button(FramesUi *ui, char *text, int x, int y, int w, int h) {
   bool pressed = false;
-  uint64_t id = ui_get_id(text); 
+  uint64_t id = ui_get_id(text);
+  V3 color = v3(0.25, 0.37, 0.55);
   
   float scale = 0.25f; /* TODO: this text scale should be in ui state struct */
   V2 dim = render2d_get_text_dim(ui->render, text, scale); (void)dim;
@@ -111,19 +112,20 @@ bool f_do_button(FramesUi *ui, char *text, int x, int y, int w, int h) {
     ui->active = 0;
   }
   
-  render2d_draw_quad(ui->render, x, y, w, h, (float)(ui->active == id)); 
-  render2d_draw_text(ui->render, text, pos_x, pos_y, scale);
+  render2d_draw_quad(ui->render, x, y, w, h, (float)(ui->active == id), color); 
+  render2d_draw_text(ui->render, text, pos_x, pos_y, scale, v3(0, 1, 0));
   return pressed;
 }
 
 void f_do_label(FramesUi *ui, char *text, int x, int y) {
   float scale = 0.25f; /* TODO: this text scale should be in ui state struct */
-  render2d_draw_text(ui->render, text, x, y, scale);
+  render2d_draw_text(ui->render, text, x, y, scale, v3(0, 1, 0));
 }
 
 bool f_do_checkbox(FramesUi *ui, char *text, int x, int y, bool *checked) {
   uint64_t id = ui_get_id(text);
   float scale = 0.25f; /* TODO: this text scale should be in ui state struct */
+  V3 color = v3(0.25, 0.37, 0.55);
   FRect rect = (FRect){x, x+20, y, y+20};
   bool inside = f_rect_contains(rect, ui->state->mouse_x, ui->state->mouse_y);
 
@@ -147,8 +149,8 @@ bool f_do_checkbox(FramesUi *ui, char *text, int x, int y, bool *checked) {
     ui->active = 0;
   }
 
-  render2d_draw_quad(ui->render, x, y, 20, 20, (float)(*checked == false));
-  render2d_draw_text(ui->render, text, x + 25, y, scale);
+  render2d_draw_quad(ui->render, x, y, 20, 20, (float)(*checked == false), color);
+  render2d_draw_text(ui->render, text, x + 25, y, scale, v3(0, 1, 0));
 
   return *checked;
 }
