@@ -30,7 +30,7 @@ void f_do_label(struct FramesUi *ui, char *text, int x, int y);
 bool f_do_checkbox(struct FramesUi *ui, char *text, int x, int y, bool *checked);
 
 #define DOCK_TEST 1
-void frames_dock_test(struct CoreWindow *window, struct Render2D *render);
+void frames_dock_test(struct CoreWindow *window, struct Render2D *render, struct CoreState *state);
 
 /* NOTE: UI state */
 bool checked;
@@ -70,7 +70,7 @@ int main(void) {
     }
     
     render2d_begin(render);
-    frames_dock_test(window, render);
+    frames_dock_test(window, render, state);
     frames_ui_test(ui);
 
     render2d_end(render);
@@ -96,6 +96,8 @@ struct RectContainer;
 typedef struct VSplitter {
   float position;
   Rect dim;
+  V3 color;
+  bool grabing;
   struct RectContainer *r;
   struct RectContainer *l;
 } VSplitter;
@@ -103,6 +105,8 @@ typedef struct VSplitter {
 typedef struct HSplitter {
   float position;
   Rect dim;
+  V3 color;
+  bool grabing;
   struct RectContainer *t;
   struct RectContainer *b;
 } HSplitter;
@@ -150,7 +154,6 @@ void draw_rect(struct Render2D *render, Rect rect, V3 color) {
 
 void draw_container(struct Render2D *render, RectContainer *container) {
   V3 rect_color = v3(0.2f, 0.2f, 0.2f);
-  V3 split_color = v3(0.0f, 1.0f, 0.0f);
   ASSERT(container);
   switch(container->type) {
     case CONTAINER_RECT: { 
@@ -166,12 +169,12 @@ void draw_container(struct Render2D *render, RectContainer *container) {
     case CONTAINER_VSPLIT: { 
       draw_container(render, container->vsplit.r); 
       draw_container(render, container->vsplit.l); 
-      draw_rect(render, container->vsplit.dim, split_color);
+      draw_rect(render, container->vsplit.dim, container->vsplit.color);
     } break;
     case CONTAINER_HSPLIT: { 
       draw_container(render, container->vsplit.r); 
       draw_container(render, container->vsplit.l); 
-      draw_rect(render, container->hsplit.dim, split_color);
+      draw_rect(render, container->hsplit.dim, container->hsplit.color);
     } break;
   }
 }
@@ -179,26 +182,62 @@ void draw_container(struct Render2D *render, RectContainer *container) {
 void calculate_vsplit_size(RectContainer *container);
 void calculate_hsplit_size(RectContainer *container);
 
-void update_container(RectContainer *container) {
+
+bool rect_contains(Rect a, int x, int y) {
+  return ((x >= a.l) && (x <= a.r) && (y >= a.t && y <= a.b));
+}
+
+void update_container(RectContainer *container, struct CoreState *state) {
   ASSERT(container);
+  V3 split_color = v3(0.0f, 1.0f, 0.0f);
   if(container->type == CONTAINER_VSPLIT) { 
       calculate_vsplit_size(container);
-      update_container(container->vsplit.l);
-      update_container(container->vsplit.r);
+      update_container(container->vsplit.l, state);
+      update_container(container->vsplit.r, state);
+      
+      container->vsplit.color = split_color; 
+      bool inside = false;
+      if(rect_contains(container->vsplit.dim, state->mouse_x, state->mouse_y)) {
+        container->vsplit.color = v3(1, 0, 0);
+        inside = true;
+      }
+      if(inside && state->mouse_button_down) container->vsplit.grabing = true;
+      if(!state->mouse_button_down) container->vsplit.grabing = false;
+
+      if(container->vsplit.grabing) {
+        float mouse_x = (float)(state->mouse_x - container->rect.l) / (container->rect.r - container->rect.l);
+        container->vsplit.position = CORE_CLAMP(mouse_x, 0.01, 0.99);
+      }
+
+
   } else if(container->type == CONTAINER_HSPLIT) { 
       calculate_hsplit_size(container);
-      update_container(container->hsplit.t);
-      update_container(container->hsplit.b);
+      update_container(container->hsplit.t, state);
+      update_container(container->hsplit.b, state);
+
+      container->hsplit.color = split_color; 
+      bool inside = false; (void)inside;
+      if(rect_contains(container->hsplit.dim, state->mouse_x, state->mouse_y)) {
+        container->hsplit.color = v3(1, 0, 0);
+        inside = true;
+      }
+      if(inside && state->mouse_button_down) container->hsplit.grabing = true;
+      if(!state->mouse_button_down) container->hsplit.grabing = false;
+
+      if(container->hsplit.grabing) {
+        float mouse_y = (float)(state->mouse_y - container->rect.t) / (container->rect.b - container->rect.t);
+        container->hsplit.position = CORE_CLAMP(mouse_y, 0.01, 0.99);
+      }
   }
 }
 
-void docker_update(struct CoreWindow *window) {
+void docker_update(struct CoreWindow *window, struct CoreState *state) {
   docker.root.rect.l = 0;
   docker.root.rect.r = core_window_get_width(window);
   docker.root.rect.t = 0;
   docker.root.rect.b = core_window_get_height(window);
 
-  update_container(&docker.root);
+  update_container(&docker.root, state);
 }
 
 void docker_render(struct Render2D *render) {
@@ -277,7 +316,7 @@ void calculate_hsplit_size(RectContainer *container) {
   container->hsplit.dim = split_rect;
 }
 
-void frames_dock_test(struct CoreWindow *window, struct Render2D *render) {
+void frames_dock_test(struct CoreWindow *window, struct Render2D *render, struct CoreState *state) {
   (void)render;
   if(!init) {
     dock_init(window);
@@ -293,6 +332,6 @@ void frames_dock_test(struct CoreWindow *window, struct Render2D *render) {
 
     init = true;
   }
-  docker_update(window);
+  docker_update(window, state);
   docker_render(render);
 }
