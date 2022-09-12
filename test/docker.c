@@ -99,10 +99,15 @@ void swap_window_container_for_vsplit_container(ContainerWindow *a, ContainerVSp
     ASSERT((ContainerWindow *)parent_l->right == a);
     parent_l->right = (Container *)b;
   }
+
   if(parent_r) {
     ASSERT(parent_r->header.type == CONTAINER_VSPLIT);
     ASSERT((ContainerWindow *)parent_r->left == a);
     parent_r->left = (Container *)b;
+  }
+
+  if(!parent_l && !parent_r) {
+    docker.root = (Container *)b; 
   }
 
   a->parent_l = 0;
@@ -110,6 +115,7 @@ void swap_window_container_for_vsplit_container(ContainerWindow *a, ContainerVSp
 }
 
 void window_container_add_vsplit_r(ContainerWindow *container) {
+  printf("window container to vsplit\n");
   ASSERT(container->header.type == CONTAINER_WINDOW);
 
   ContainerVSplit *vsplit = vsplit_container_create(container->header.rect);
@@ -124,17 +130,25 @@ void window_container_add_vsplit_r(ContainerWindow *container) {
   vsplit->right->window.parent_l = vsplit;
 };
 
+void print_rect(Rect rect) {
+  printf("l:%d, r:%d, t:%d, b:%d\n", rect.l, rect.r, rect.t, rect.b);
+}
+
 void vsplit_container_add_vsplit_r(ContainerVSplit *container) {
+  printf("vsplit container append vsplit\n");
   ASSERT(container->header.type == CONTAINER_VSPLIT);
 
-  ContainerVSplit *vsplit = vsplit_container_create(container->header.rect);
+  ContainerVSplit *vsplit = vsplit_container_create(container->right->header.rect);
   vsplit->prev = container;
   vsplit->next = container->next;
   container->next = vsplit;
-  
-  Rect2 rects = rect_slice_vertical(container->header.rect, 0.5f); 
-  container->header.rect = rects.one;
-  vsplit->header.rect = rects.two;
+ 
+  Rect2 rects = rect_slice_vertical(container->right->header.rect, 0.5f);
+  container->right->header.rect = rects.one; 
+  vsplit->left = container->right;
+  vsplit->right = (Container *)window_container_create(rects.two);
+  print_rect(rects.one);
+  print_rect(rects.two);
 }
 
 void container_add_vsplit_r(Container *container) {
@@ -148,7 +162,14 @@ static void draw_rect(struct Render2D *render, Rect rect, V3 color) {
   render2d_draw_quad(render, rect.l, rect.t, rect.r - rect.l, rect.b - rect.t, 0, color);
 }
 
+
+void container_render(struct Render2D *render, Container *container);
+
+int rect_per_frame = 0;
 void window_container_render(struct Render2D *render, ContainerWindow *container) {
+  //printf("rect numner %d\n", ++rect_per_frame);
+  //print_rect(container->header.rect);
+  
   (void)render;
   ASSERT(container->header.type == CONTAINER_WINDOW);
   V3 rect_color = v3(0.2f, 0.2f, 0.2f);
@@ -163,8 +184,13 @@ void window_container_render(struct Render2D *render, ContainerWindow *container
 }
 
 void vsplit_container_render(struct Render2D *render, ContainerVSplit *container) {
-  (void)render;
-  ASSERT(container->header.type == CONTAINER_VSPLIT);
+  ContainerVSplit *vsplit = container;
+  while(vsplit) {
+    ASSERT(container->header.type == CONTAINER_VSPLIT);
+    container_render(render, container->left);
+    container_render(render, container->right);
+    vsplit = vsplit->next;
+  }
 }
 
 void container_render(struct Render2D *render, Container *container) {
@@ -178,6 +204,10 @@ void docker_init(struct CoreWindow *window) {
   docker.container_cout = 0;
   Rect window_rect = (Rect){0, core_window_get_width(window), 0,  core_window_get_height(window)};
   docker.root = (Container *)window_container_create(window_rect);
+
+  container_add_vsplit_r(docker.root);
+  container_add_vsplit_r(docker.root);
+
 }
 
 void docker_update(struct CoreWindow *window) {
@@ -198,4 +228,6 @@ void frames_dock_test(struct CoreWindow *window, struct Render2D *render, struct
   }
   docker_update(window);
   docker_render(render);
+
+  rect_per_frame = 0;
 }
