@@ -5,23 +5,34 @@
 
 /* ------------------------CIRCULAR DOUBLE LINK LIST-----------------------------------------*/
   /* TODO: Test a circular double link list macros */
-#define core_c_dll_init(p) ((dummy)->next = (dummy), (dummy)->prev = (dummy))
-#define core_c_dll_push_back(dummy, v) ((v)->next = (dummy), \
-                                        (v)->prev = (dummy)->prev, \
+#define core_cdll_init(dummy) ((dummy)->next = (dummy), (dummy)->prev = (dummy))
+
+#define core_cdll_push_back(dummy, v) ((v)->next = (dummy), \
+                                       (v)->prev = (dummy)->prev, \
+                                       (v)->prev->next = (v), \
+                                       (v)->next->prev = (v))
+
+#define core_cdll_push_front(dummy, v) ((v)->prev = (dummy), \
+                                        (v)->next = (dummy)->next, \
                                         (v)->prev->next = (v), \
                                         (v)->next->prev = (v))
-#define core_c_dll_push_front(dummy, v) ((v)->prev = (dummy), \
-                                         (v)->next = (dummy)->next, \
-                                         (v)->prev->next = (v), \
-                                         (v)->next->prev = (v))
-#define core_c_dll_remove(v) ((v)->next->prev = (v)->prev, \
-                              (v)->prev->next = (v)->next)
+
+#define core_cdll_remove(v) ((v)->next->prev = (v)->prev, \
+                             (v)->prev->next = (v)->next)
+
+#define core_cdll_insert_r(a, b) ((b)->prev = (a), \
+                                  (b)->next = (a)->next, \
+                                  (b)->next->prev = (b))
+
+#define core_cdll_insert_l(a, b) ((b)->next = (a), \
+                                  (b)->prev = (a)->prev, \
+                                  (b)->prev->next = (b))
 
 /* ---------------------------HASH MAP----------------------------------------------- */
 
 #define CORE_MAP_SEED 0
 #define CORE_MAP_ENTRY_EMPTY 0
-#define CORE_MAP_ENTRY_TOMBSTONE 1 /* TODO: Acully write the code to remove items */
+#define CORE_MAP_ENTRY_TOMBSTONE 1 /* TODO: Actually write the code to remove items */
 
 typedef struct CoreMapEntry {
   void *key;
