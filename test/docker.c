@@ -193,6 +193,19 @@ void container_render(struct Render2D *render, Container *container) {
   }
 }
 
+
+void split_container_set_f(SplitContainer *split, Container *container) {
+  split->f = container;
+  container_set_parent_f(container, split->prev);
+  container_set_parent_s(container, split);
+}
+
+void split_container_set_s(SplitContainer *split, Container *container) {
+    split->s = container;
+    container_set_parent_f(container, split);
+    container_set_parent_s(container, split->next);
+}
+
 Dockable *dockable_add_vsplit_r(Dockable *container) {
   ASSERT(container_get_type((Container *)container) == CONTAINER_DOCKABLE);
 
@@ -205,21 +218,37 @@ Dockable *dockable_add_vsplit_r(Dockable *container) {
   SplitListContainer *list = 0;
 
   if(!split_prev && !split_next) {
-    /* TODO: Setup new split list */ 
+    ASSERT((Container *)container == docker.root);
+    list = split_list_container_push();
+    list->type = SPLIT_LIST_V;
+    core_cdll_push_back(&list->dummy, split);
+    split_container_set_f(split, (Container *)container);
+    split_container_set_s(split, (Container *)result);
+    docker.root = (Container *)list;
   } else {
     ASSERT(split_prev && split_next);
-    ASSERT(split_prev->parent ==  split_next->parent);
+    ASSERT(split_prev->parent == split_next->parent);
     list = split_prev->parent;
     if(list->type != SPLIT_LIST_V) {
-      /* TODO: Setup new split list */
+      list = split_list_container_push();
+      list->type = SPLIT_LIST_V;
+      core_cdll_push_back(&list->dummy, split);
+      SplitContainer *parent_f = container_get_parent_f((Container *)container);
+      SplitContainer *parent_s = container_get_parent_s((Container *)container);
+      split_container_set_s(parent_f, (Container *)list);
+      split_container_set_f(parent_s, (Container *)list);
+      split_container_set_f(split, (Container *)container);
+      split_container_set_s(split, (Container *)result);
     } else {
       core_cdll_insert_r(split_prev, split);
-      split->f = split_prev->s;
-      split->s = (Container *)result;
-      split_next->f = (Container *)result; 
+      split_container_set_f(split, split_prev->s);
+      split_container_set_s(split, (Container *)result);
+      split_container_set_f(split_next, (Container *)result); 
     }
   }
   split->parent = list;
+  
+  /* TODO: Recalculate rects size */
 
   return result;
 }
