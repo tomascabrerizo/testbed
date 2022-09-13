@@ -22,11 +22,13 @@
 
 #define core_cdll_insert_r(a, b) ((b)->prev = (a), \
                                   (b)->next = (a)->next, \
-                                  (b)->next->prev = (b))
+                                  (b)->next->prev = (b)), \
+                                  (b)->prev->next = (b)
 
 #define core_cdll_insert_l(a, b) ((b)->next = (a), \
                                   (b)->prev = (a)->prev, \
-                                  (b)->prev->next = (b))
+                                  (b)->prev->next = (b)), \
+                                  (b)->next->prev = (b)
 
 /* ---------------------------HASH MAP----------------------------------------------- */
 
