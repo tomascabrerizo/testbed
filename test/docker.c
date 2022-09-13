@@ -27,155 +27,201 @@ Rect2 rect_slice_vertical(Rect rect, float f) {
   return result;
 }
 
+void print_rect(Rect rect) {
+  printf("l:%d, r:%d, t:%d, b:%d\n", rect.l, rect.r, rect.t, rect.b);
+}
+
 typedef enum ContainerType {
-  CONTAINER_WINDOW,
-  CONTAINER_VSPLIT,
+  CONTAINER_DOCKABLE,
+  CONTAINER_SPLIT,
+  CONTAINER_SPLIT_LIST,
 } ContainerType;
 
 typedef struct ContainerHeader {
   ContainerType type;
   Rect rect;
+  struct SplitContainer *parent_l;
+  struct SplitContainer *parent_r;
 } ContainerHeader;
 
-typedef struct ContainerWindow {
-  ContainerHeader header;
-  struct ContainerVSplit *parent_l;
-  struct ContainerVSplit *parent_r;
-} ContainerWindow;
-
-typedef struct ContainerVSplit {
-  ContainerHeader header;
+typedef struct SplitContainer {
+  ContainerHeader c;
+  
   float position;
-  union Container *left;
-  union Container *right;
-  struct ContainerVSplit *next;
-  struct ContainerVSplit *prev;
-} ContainerVSplit;
+  bool vertical;
+  union Container *r;
+  union Container *l;
+
+  struct SplitContainer *next;
+  struct SplitContainer *prev;
+} SplitContainer;
+
+typedef struct SplitContainerList {
+  SplitContainer dummy;
+} SplitContainerList;
+
+typedef struct Dockable {
+  ContainerHeader c;
+
+} Dockable;
 
 typedef union Container {
-  ContainerHeader header;
-  ContainerWindow window;
-  ContainerVSplit vsplit;
+  ContainerHeader c;
+
+  SplitContainer split;
+  SplitContainerList split_list;
+  Dockable dock;
 } Container;
 
-#define CONTAINERS_MAX 256 
+#define CONTAINERS_MAX 256
 typedef struct Docker {
+
   Container *root;
 
   Container containers[CONTAINERS_MAX];
-  int container_cout;
-} Docker;
+  uint64_t containers_cout;
+} Docker; 
 
 static Docker docker;
-static bool init = false;
-
-Container *container_push(void) {
-  ASSERT(docker.container_cout < CONTAINERS_MAX);
-  Container *container = docker.containers + docker.container_cout++;
-  memset(container, 0, sizeof(Container));
-  return container;
-}
-
-ContainerWindow *window_container_create(Rect rect) {
-  ContainerWindow *container = (ContainerWindow *)container_push();
-  container->header.type = CONTAINER_WINDOW;
-  container->header.rect = rect;
-  return container;
-}
-
-ContainerVSplit *vsplit_container_create(Rect rect) {
-  ContainerVSplit *container = (ContainerVSplit *)container_push();
-  container->header.type = CONTAINER_VSPLIT;
-  container->header.rect = rect;
-  container->position = 0.5f;
-  return container;
-}
-
-void swap_window_container_for_vsplit_container(ContainerWindow *a, ContainerVSplit *b) {
-  ContainerVSplit *parent_l = a->parent_l;
-  ContainerVSplit *parent_r = a->parent_r;
-  if(parent_l) {
-    ASSERT(parent_l->header.type == CONTAINER_VSPLIT);
-    ASSERT((ContainerWindow *)parent_l->right == a);
-    parent_l->right = (Container *)b;
-  }
-
-  if(parent_r) {
-    ASSERT(parent_r->header.type == CONTAINER_VSPLIT);
-    ASSERT((ContainerWindow *)parent_r->left == a);
-    parent_r->left = (Container *)b;
-  }
-
-  if(!parent_l && !parent_r) {
-    docker.root = (Container *)b; 
-  }
-
-  a->parent_l = 0;
-  a->parent_r = 0;
-}
-
-void window_container_add_vsplit_r(ContainerWindow *container) {
-  printf("window container to vsplit\n");
-  ASSERT(container->header.type == CONTAINER_WINDOW);
-
-  ContainerVSplit *vsplit = vsplit_container_create(container->header.rect);
-  swap_window_container_for_vsplit_container(container, vsplit);
-
-  Rect2 rects = rect_slice_vertical(container->header.rect, vsplit->position);
-  vsplit->left = (Container *)container;
-  vsplit->left->window.parent_r = vsplit;
-
-  vsplit->left->header.rect = rects.one;
-  vsplit->right = (Container *)window_container_create(rects.two);
-  vsplit->right->window.parent_l = vsplit;
-};
-
-void print_rect(Rect rect) {
-  printf("l:%d, r:%d, t:%d, b:%d\n", rect.l, rect.r, rect.t, rect.b);
-}
-
-void vsplit_container_add_vsplit_r(ContainerVSplit *container) {
-  printf("vsplit container append vsplit\n");
-  ASSERT(container->header.type == CONTAINER_VSPLIT);
-
-  ContainerVSplit *vsplit = vsplit_container_create(container->right->header.rect);
-  vsplit->prev = container;
-  vsplit->next = container->next;
-  container->next = vsplit;
- 
-  Rect2 rects = rect_slice_vertical(container->right->header.rect, 0.5f);
-  container->right->header.rect = rects.one; 
-  vsplit->left = container->right;
-  vsplit->right = (Container *)window_container_create(rects.two);
-  print_rect(rects.one);
-  print_rect(rects.two);
-}
-
-void container_add_vsplit_r(Container *container) {
-  switch(container->header.type) {
-    case CONTAINER_WINDOW: { window_container_add_vsplit_r((ContainerWindow *)container); } break;
-    case CONTAINER_VSPLIT: { vsplit_container_add_vsplit_r((ContainerVSplit *)container); } break;
-  }
-}
 
 static void draw_rect(struct Render2D *render, Rect rect, V3 color) {
   render2d_draw_quad(render, rect.l, rect.t, rect.r - rect.l, rect.b - rect.t, 0, color);
 }
 
+void container_set_parent_l(Container *container, SplitContainer *parent) {
+  container->c.parent_l = parent;
+}
+
+SplitContainer *container_get_parent_l(Container *container) {
+  return container->c.parent_l;
+}
+
+void container_set_parent_r(Container *container, SplitContainer *parent) {
+  container->c.parent_r = parent;
+}
+
+SplitContainer *container_get_parent_r(Container *container) {
+  return container->c.parent_r;
+}
+
+void container_set_rect(Container *container, Rect rect) {
+  container->c.rect = rect;
+}
+
+Rect container_get_rect(Container *container) {
+  return container->c.rect;
+}
+
+void container_set_type(Container *container, ContainerType type) {
+  container->c.type = type;
+}
+
+ContainerType container_get_type(Container *container) {
+  return container->c.type;
+}
+
+Container *container_push(void) {
+  ASSERT(docker.containers_cout < CONTAINERS_MAX);
+  Container *result = docker.containers + docker.containers_cout++;
+  memset(result, 0, sizeof(Container));
+  return result;
+}
+
+SplitContainer *split_container_push(void) {
+  SplitContainer *result = (SplitContainer *)container_push();
+  container_set_type((Container *)result, CONTAINER_SPLIT);
+  return result;
+}
+
+SplitContainerList *split_list_container_push(void) {
+  SplitContainerList *result = (SplitContainerList *)container_push();
+  container_set_type((Container *)result, CONTAINER_SPLIT_LIST);
+  return result;
+}
+
+Dockable *dockable_container_push(void) {
+  Dockable *result = (Dockable *)container_push();
+  container_set_type((Container *)result, CONTAINER_DOCKABLE);
+  return result;
+}
+
+Dockable *dockable_container_add_split_r(Dockable *container) {
+  SplitContainer *split = split_container_push();
+  if((Container *)container == docker.root) {
+    docker.root = (Container *)split;
+  }
+
+  SplitContainer *parent_l = container_get_parent_l((Container *)container);
+  SplitContainer *parent_r = container_get_parent_r((Container *)container);
+  if(parent_l) parent_l->r = (Container *)split;
+  if(parent_r) parent_r->l = (Container *)split;
+
+  Dockable *result = dockable_container_push();
+  container_set_parent_l((Container *)result, split);
+  container_set_parent_r((Container *)container, split);
+  split->l = (Container *)container;
+  split->r = (Container *)result;
+  
+  split->position = 0.5f;
+
+  Rect rect = container_get_rect((Container *)container);
+  Rect2 rects = rect_slice_vertical(rect, split->position); (void)rects;
+  container_set_rect((Container *)split, rect);
+  container_set_rect((Container *)container, rects.one);
+  container_set_rect((Container *)result, rects.two);
+
+  return result;
+}
+
+Dockable *split_container_add_split_r(SplitContainer *container) {
+  SplitContainer *split = split_container_push();
+  Container *child = container->r;
+  
+  split->next = container->next;
+  split->prev = container;
+  split->prev->next = split;
+  
+  Dockable *result = dockable_container_push();
+  split->l = child;
+  split->r = (Container *)result;
+  container_set_parent_r(child, split);
+  container_set_parent_l((Container *)result, split);
+  container_set_parent_r((Container *)result, split->next);
+  if(split->next) split->next->l = (Container *)result;
+  
+  split->position = 0.5f;
+
+  Rect child_rect = container_get_rect(child);
+  Rect2 rects = rect_slice_vertical(child_rect, split->position);
+  
+  container_set_rect(child, rects.one);
+  container_set_rect((Container *)result, rects.two);
+  
+  Rect container_rect = container_get_rect((Container *)container);
+  container_rect.r -= (rects.two.r - rects.two.l);
+  container_set_rect((Container *)container, container_rect);
+
+  return result;
+}
+
+Dockable *container_add_split_r(Container *container) {
+  switch(container_get_type(container)) {
+    case CONTAINER_DOCKABLE: return dockable_container_add_split_r((Dockable *)container);
+    case CONTAINER_SPLIT: return split_container_add_split_r((SplitContainer *)container);
+    case CONTAINER_SPLIT_LIST: ASSERT(true); /* TODO: Invalid code path */;
+  }
+  ASSERT(true); /* TODO: Invalid code path */
+  return 0;
+}
 
 void container_render(struct Render2D *render, Container *container);
 
-int rect_per_frame = 0;
-void window_container_render(struct Render2D *render, ContainerWindow *container) {
-  //printf("rect numner %d\n", ++rect_per_frame);
-  //print_rect(container->header.rect);
-  
-  (void)render;
-  ASSERT(container->header.type == CONTAINER_WINDOW);
+void dockable_container_render(struct Render2D *render, Dockable *container) {
+  ASSERT(container_get_type((Container *)container) == CONTAINER_DOCKABLE);
   V3 rect_color = v3(0.2f, 0.2f, 0.2f);
-  draw_rect(render, container->header.rect, v3(0.1, 0.1, 0.1));
+  Rect rect = container_get_rect((Container *)container);
+  draw_rect(render, rect, v3(0.1, 0.1, 0.1));
   int border = 8;
-  Rect rect = container->header.rect;
   rect.l += border;
   rect.t += border;
   rect.r -= border;
@@ -183,44 +229,50 @@ void window_container_render(struct Render2D *render, ContainerWindow *container
   draw_rect(render, rect, rect_color);
 }
 
-void vsplit_container_render(struct Render2D *render, ContainerVSplit *container) {
-  ContainerVSplit *vsplit = container;
-  while(vsplit) {
-    ASSERT(container->header.type == CONTAINER_VSPLIT);
-    container_render(render, container->left);
-    container_render(render, container->right);
-    vsplit = vsplit->next;
+void split_container_render(struct Render2D *render, SplitContainer *container) {
+  ASSERT(container_get_type((Container *)container) == CONTAINER_SPLIT);
+  container_render(render, container->l);
+  container_render(render, container->r);
+
+  SplitContainer *next = container->next;
+  while(next) {
+    ASSERT(container_get_type((Container *)next) == CONTAINER_SPLIT);
+    container_render(render, next->r);
+    next = next->next;
   }
 }
 
 void container_render(struct Render2D *render, Container *container) {
-  switch(container->header.type) {
-    case CONTAINER_WINDOW: { window_container_render(render, (ContainerWindow *)container); } break;
-    case CONTAINER_VSPLIT: { vsplit_container_render(render, (ContainerVSplit *)container); } break;
+  switch(container_get_type(container)) {
+    case CONTAINER_DOCKABLE: dockable_container_render(render, (Dockable *)container); break;
+    case CONTAINER_SPLIT: split_container_render(render, (SplitContainer *)container); break;
+    case CONTAINER_SPLIT_LIST: ASSERT(true) /* TODO: Invalid code path */; break;
   }
 }
 
 void docker_init(struct CoreWindow *window) {
-  docker.container_cout = 0;
+  docker.root = (Container *)dockable_container_push();
   Rect window_rect = (Rect){0, core_window_get_width(window), 0,  core_window_get_height(window)};
-  docker.root = (Container *)window_container_create(window_rect);
-
-  container_add_vsplit_r(docker.root);
-  container_add_vsplit_r(docker.root);
-
+  container_set_rect(docker.root, window_rect);
+  
+  container_add_split_r(docker.root);
+  container_add_split_r(docker.root);
+  Dockable *container = container_add_split_r(docker.root); (void)container;
+  container_add_split_r((Container *)container);
 }
 
 void docker_update(struct CoreWindow *window) {
+  /* NOTE: Update root container rect on resize events */
   Rect window_rect = (Rect){0, core_window_get_width(window), 0,  core_window_get_height(window)};
-  docker.root->header.rect = window_rect;
+  container_set_rect(docker.root, window_rect);
 }
 
 void docker_render(struct Render2D *render) {
   container_render(render, docker.root);
 }
 
+static bool init = false;
 void frames_dock_test(struct CoreWindow *window, struct Render2D *render, struct CoreState *state) {
-  (void)docker;
   (void)state, (void)window, (void)render;
   if(!init) {
     docker_init(window);
@@ -228,6 +280,4 @@ void frames_dock_test(struct CoreWindow *window, struct Render2D *render, struct
   }
   docker_update(window);
   docker_render(render);
-
-  rect_per_frame = 0;
 }
