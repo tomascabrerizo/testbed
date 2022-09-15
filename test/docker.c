@@ -424,7 +424,8 @@ void docker_init(void) {
   f_root_container_set_draggable(docker.root, drag);
   F_DraggableContainer *drag1 = f_draggable_container_split_vr(drag); (void)drag1;
   F_DraggableContainer *drag2 = f_draggable_container_split_vr(drag); (void)drag2;
-  printf("time to render\n");
+  F_DraggableContainer *drag3 = f_draggable_container_split_vr(drag2); (void)drag3;
+  F_DraggableContainer *drag4 = f_draggable_container_split_vr(drag1); (void)drag4;
 }
 
 void docker_update(struct CoreWindow *window) {
