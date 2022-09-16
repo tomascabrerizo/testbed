@@ -429,14 +429,26 @@ void f_draggable_container_render(struct Render2D *render, F_DraggableContainer 
   draw_rect(render, l, r, t, b, v3(0.2f, 0.2f, 0.2f));
 }
 
+void f_split_container_render(Render2D *render, F_SplitContainer *split) {
+  F_Rect rect = f_split_container_get_rect(split);
+  int l = (int)(rect.l * docker.width);
+  int r = (int)(rect.r * docker.width);
+  int t = (int)(rect.t * docker.height);
+  int b = (int)(rect.b * docker.height);
+  render2d_draw_outline(render, l, t, r - l, b - t, 1, v3(1, 0, 0));
+}
+
 void f_split_list_container_render(struct Render2D *render, F_SplitListContainer *split_list) {
   F_SplitContainer *split = split_list->dummy.next;
   ASSERT(split != &split_list->dummy);
   f_child_container_render(render, split->c.f);
   f_child_container_render(render, split->c.s);
+  f_split_container_render(render, split);
+
   split = split->next;
   while(split != &split_list->dummy) {
     f_child_container_render(render, split->c.s);
+    f_split_container_render(render, split);
     split = split->next;
   }
 }
@@ -456,15 +468,22 @@ void docker_init(void) {
   F_DraggableContainer *drag2 = f_draggable_container_create(); (void)drag2;
   F_DraggableContainer *drag3 = f_draggable_container_create(); (void)drag3;
   F_DraggableContainer *drag4 = f_draggable_container_create(); (void)drag4;
+  F_DraggableContainer *drag5 = f_draggable_container_create(); (void)drag5;
+  F_DraggableContainer *drag6 = f_draggable_container_create(); (void)drag6;
  
   docker.root = f_root_container_create();
   f_root_container_set_draggable(docker.root, drag0);
 
   f_dock_draggable_b(drag0, drag1);
   f_dock_draggable_b(drag0, drag2);
+  
+  //f_dock_draggable_r(drag1, drag5);
+  f_dock_draggable_r(drag2, drag5);
+  f_dock_draggable_r(drag2, drag6);
 
   f_dock_draggable_r(drag0, drag3);
   f_dock_draggable_r(drag3, drag4);
+
 
   printf("number of containers used: %d\n", docker.buffer_count);
   

@@ -71,6 +71,7 @@ void render2d_draw_quad(Render2D *render, int x, int y, int w, int h, float inte
 void render2d_draw_texture(Render2D *render, V2 des1, V2 des2, V2 src1, V2 src2, V3 color);
 void render2d_draw_glyph(Render2D *render, struct CoreGlyph *glyph, int x, int y, float scale, V3 color);
 void render2d_draw_text(Render2D *render, char *text, int x, int y, float scale, V3 color);
+void render2d_draw_outline(Render2D *render, int x, int y, int w, int h, int border, V3 color);
 
 V2 render2d_get_text_dim(Render2D *render, char *text, float scale);
 

@@ -253,6 +253,23 @@ void render2d_draw_quad(Render2D *render, int x, int y, int w, int h, float inte
   command->color = color;
 }
 
+void render2d_draw_outline(Render2D *render, int x, int y, int w, int h, int border, V3 color) {
+  (void)h, (void)w;
+  V2 t_pos = v2(x, y);
+  V2 t_dim = v2(w, border);
+  render2d_draw_quad(render, t_pos.x, t_pos.y, t_dim.x, t_dim.y, 0, color);
+  V2 b_pos = v2(x, y + h - border);
+  V2 b_dim = v2(w, border);
+  render2d_draw_quad(render, b_pos.x, b_pos.y, b_dim.x, b_dim.y, 0, color);
+  V2 l_pos = v2(x, y);
+  V2 l_dim = v2(border, h);
+  render2d_draw_quad(render, l_pos.x, l_pos.y, l_dim.x, l_dim.y, 0, color);
+  V2 r_pos = v2(x + w - border, y);
+  V2 r_dim = v2(border, h);
+  render2d_draw_quad(render, r_pos.x, r_pos.y, r_dim.x, r_dim.y, 0, color);
+}
+
+
 void render2d_draw_texture(Render2D *render, V2 des1, V2 des2, V2 src1, V2 src2, V3 color) {
   RenderCommand2D *command = render2d_push_command(render);
   command->des1 = des1;
