@@ -173,7 +173,16 @@ F_Rect f_draggable_container_get_rect(F_DraggableContainer *drag) {
 void f_split_container_calculate_size(F_SplitContainer *split) {
   F_Rect rect_f = f_child_container_get_rect(split->c.f);
   F_Rect rect_s = f_child_container_get_rect(split->c.s);
-  F_Rect rect = (F_Rect) {rect_f.l, rect_s.r, rect_f.t, rect_s.b};
+  
+  // F_Rect rect = (F_Rect) {rect_f.l, rect_s.r, rect_f.t, rect_s.b};
+  
+  float l = CORE_MIN(rect_f.l, rect_s.l);
+  float r = CORE_MAX(rect_f.r, rect_s.r);
+  float t = CORE_MIN(rect_f.t, rect_s.t);
+  float b = CORE_MAX(rect_f.b, rect_s.b);
+  
+  F_Rect rect = (F_Rect) {l, r, t, b};
+
   f_split_container_set_rect(split, rect);
 }
 
@@ -188,8 +197,10 @@ void f_split_list_container_insert_r(F_SplitContainer *a, F_SplitContainer *b) {
   ASSERT(a->parent);
   ASSERT(a->parent->c.type == F_CHILD_SPLIT_LIST);
   ASSERT(a->c.s);
+
   core_cdll_insert_r(a, b);
   b->parent = a->parent;
+  
   F_Rect rect = f_child_container_get_rect(a->c.s);
   f_split_container_set_rect(b, rect);
   F_Rect f, s; (void)s;
@@ -245,6 +256,8 @@ void f_split_container_set_child_f(F_SplitContainer *split, F_ChildContainer *ch
   F_Rect f, s; (void)s;
   f_rect_slice(rect, &f, &s, split->position, split->parent->vertical);
   f_child_container_set_rect(child, f);
+  
+  f_split_container_calculate_size(split->prev);
 }
 
 void f_split_container_set_child_s(F_SplitContainer *split, F_ChildContainer *child) {
@@ -256,6 +269,8 @@ void f_split_container_set_child_s(F_SplitContainer *split, F_ChildContainer *ch
   F_Rect f, s; (void)f;
   f_rect_slice(rect, &f, &s, split->position, split->parent->vertical);
   f_child_container_set_rect(child, s);
+
+  f_split_container_calculate_size(split->next);
 }
 
 void f_split_container_set_split_list_f(F_SplitContainer *split, F_SplitListContainer *split_list) {
@@ -312,11 +327,22 @@ F_SplitListContainer *f_split_list_container_create(bool vertical) {
   F_SplitListContainer *result = (F_SplitListContainer *)f_child_container_create(F_CHILD_SPLIT_LIST);
   result->vertical = vertical;
   core_cdll_init(&result->dummy);
+  
+  /* TODO: check if we can use static memory with this dummy */
+#if 1
+  F_ChildContainer *child_dummy_f = f_child_container_create(F_CHILD_DRAGGABLE);//&child_dummy;
+  F_ChildContainer *child_dummy_s = f_child_container_create(F_CHILD_DRAGGABLE);//&child_dummy;
+#else
   static F_ChildContainer child_dummy;
+  F_ChildContainer *child_dummy_f = &child_dummy;
+  F_ChildContainer *child_dummy_s = &child_dummy;
+
+#endif
+  
   result->dummy.c.type = F_PARENT_SPLIT; 
   result->dummy.parent = result;
-  f_split_container_set_child_f(&result->dummy, &child_dummy);
-  f_split_container_set_child_s(&result->dummy, &child_dummy);
+  f_split_container_set_child_f(&result->dummy, child_dummy_f);
+  f_split_container_set_child_s(&result->dummy, child_dummy_s);
   return result;
 }
 
@@ -340,10 +366,20 @@ void f_dock_draggable(F_DraggableContainer *dst, F_DraggableContainer *src, bool
     case F_PARENT_SPLIT: {
       F_SplitContainer *prev_split = (F_SplitContainer *)parent;
       if(prev_split->parent->vertical == vertical) {
+        
+        printf("begin_fail\n");
+        print_rect(f_split_container_get_rect(prev_split));
+        print_rect(f_child_container_get_rect(prev_split->c.f));
+        print_rect(f_child_container_get_rect(prev_split->c.s));
         f_split_list_container_insert_r(prev_split, split);
+        print_rect(f_split_container_get_rect(prev_split));
+        printf("end_fail\n");
+
         f_split_container_set_child_f(split, &dst->c);
         f_split_container_set_child_s(split, &src->c);
       } else {
+        print_rect(f_split_container_get_rect(prev_split));
+        
         F_SplitListContainer *split_list = f_split_list_container_create(vertical);
         f_split_container_set_split_list_s(prev_split, split_list);
         f_split_list_container_push_first(split_list, split);
@@ -425,9 +461,12 @@ void docker_init(void) {
   f_root_container_set_draggable(docker.root, drag0);
 
   f_dock_draggable_b(drag0, drag1);
-  f_dock_draggable_r(drag0, drag2);
-  f_dock_draggable_r(drag2, drag3);
-  f_dock_draggable_b(drag1, drag4);
+  f_dock_draggable_b(drag0, drag2);
+
+  f_dock_draggable_r(drag0, drag3);
+  f_dock_draggable_r(drag3, drag4);
+
+  printf("number of containers used: %d\n", docker.buffer_count);
   
 }
 
