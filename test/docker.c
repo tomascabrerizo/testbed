@@ -280,99 +280,79 @@ F_ParentContainer *f_child_container_get_parent_f(F_ChildContainer *child) {
   return child->f;
 }
 
-#if 0
-void f_dock_draggable(F_DraggableContainer *dst, F_DraggableContainer *src, bool vertical) {
-  F_ParentContainer *parent_f = f_child_container_get_parent_f(&dst->c); 
-  F_SplitContainer *split = f_split_container_create(0.5f); (void)split;
-  
-  F_Rect dst_rect = f_draggable_container_get_rect(dst);
-  F_Rect f_rect, s_rect;
-  f_rect_slice(dst_rect, &f_rect, &s_rect, split->position, vertical);
-
-  f_split_container_set_rect(split, dst_rect);
-  f_draggable_container_set_rect(dst, f_rect);
-  f_draggable_container_set_rect(src, s_rect);
-
+void f_parent_f_container_set_split(F_ParentContainer *parent_f, F_SplitContainer *split, bool vertical) {
   switch(parent_f->type) {
     case F_PARENT_ROOT: {
       F_RootContainer *root_f = (F_RootContainer *)parent_f;
       F_SplitListContainer *split_list = f_split_list_container_create(vertical);
       f_root_container_set_child(root_f, &split_list->c);
-      /* TODO: repeted code */
       f_split_list_container_insert_r(&split_list->dummy, split);
-      f_split_container_set_child_f(split, &dst->c);
-      f_split_container_set_child_s(split, &src->c);
-      f_split_container_recalculate_size(split->next);
-      f_split_container_recalculate_size(split->prev);
     } break;
     case F_PARENT_SPLIT: {
       F_SplitContainer *split_f = (F_SplitContainer *)parent_f; (void)split_f;
       if(split_f->parent->vertical == vertical) {
-        /* TODO: repeted code */
         f_split_list_container_insert_r(split_f, split);
-        f_split_container_set_child_f(split, &dst->c);
-        f_split_container_set_child_s(split, &src->c);
-        f_split_container_recalculate_size(split->next);
-        f_split_container_recalculate_size(split->prev);
       } else {
         F_SplitListContainer *split_list = f_split_list_container_create(vertical);
         f_split_container_set_child_s(split_f, &split_list->c);
-        /* TODO: repeted code */
         f_split_list_container_insert_r(&split_list->dummy, split);
-        f_split_container_set_child_f(split, &dst->c);
-        f_split_container_set_child_s(split, &src->c);
-        f_split_container_recalculate_size(split->next);
-        f_split_container_recalculate_size(split->prev);
       }
     } break;
   }
 }
-#else
-void f_dock_draggable(F_DraggableContainer *dst, F_DraggableContainer *src, bool vertical) {
+
+void f_dock_draggable_rb(F_DraggableContainer *dst, F_DraggableContainer *src, bool vertical) {
   F_ParentContainer *parent_f = f_child_container_get_parent_f(&dst->c); 
-  F_SplitContainer *split = f_split_container_create(0.5f); (void)split;
-  
+  F_SplitContainer *split = f_split_container_create(0.5f);
+  /* NOTE: Set up new dimensions */ 
   F_Rect dst_rect = f_draggable_container_get_rect(dst);
   F_Rect f_rect, s_rect;
   f_rect_slice(dst_rect, &f_rect, &s_rect, split->position, vertical);
-
   f_split_container_set_rect(split, dst_rect);
   f_draggable_container_set_rect(dst, f_rect);
   f_draggable_container_set_rect(src, s_rect);
-
-  switch(parent_f->type) {
-    case F_PARENT_ROOT: {
-      F_RootContainer *root_f = (F_RootContainer *)parent_f;
-      F_SplitListContainer *split_list = f_split_list_container_create(vertical);
-      f_root_container_set_child(root_f, &split_list->c);
-      f_split_list_container_insert_r(&split_list->dummy, split);
-    } break;
-    case F_PARENT_SPLIT: {
-      F_SplitContainer *split_f = (F_SplitContainer *)parent_f; (void)split_f;
-      if(split_f->parent->vertical == vertical) {
-        f_split_list_container_insert_r(split_f, split);
-      } else {
-        F_SplitListContainer *split_list = f_split_list_container_create(vertical);
-        f_split_container_set_child_s(split_f, &split_list->c);
-        f_split_list_container_insert_r(&split_list->dummy, split);
-      }
-    } break;
-  }
-
+  /* NOTE: Set up new hierarchy */ 
+  f_parent_f_container_set_split(parent_f, split, vertical);
   f_split_container_set_child_f(split, &dst->c);
   f_split_container_set_child_s(split, &src->c);
   f_split_container_recalculate_size(split->next);
   f_split_container_recalculate_size(split->prev);
 }
-#endif
+
+void f_dock_draggable_lt(F_DraggableContainer *dst, F_DraggableContainer *src, bool vertical) {
+  F_ParentContainer *parent_f = f_child_container_get_parent_f(&dst->c); 
+  F_SplitContainer *split = f_split_container_create(0.5f);
+  /* NOTE: Set up new dimensions */ 
+  F_Rect dst_rect = f_draggable_container_get_rect(dst);
+  F_Rect f_rect, s_rect;
+  f_rect_slice(dst_rect, &f_rect, &s_rect, split->position, vertical);
+  f_split_container_set_rect(split, dst_rect);
+  f_draggable_container_set_rect(dst, s_rect);
+  f_draggable_container_set_rect(src, f_rect);
+  /* NOTE: Set up new hierarchy */ 
+  f_parent_f_container_set_split(parent_f, split, vertical);
+  f_split_container_set_child_s(split, &dst->c);
+  f_split_container_set_child_f(split, &src->c);
+  f_split_container_recalculate_size(split->next);
+  f_split_container_recalculate_size(split->prev);
+}
 
 void f_dock_draggable_r(F_DraggableContainer *dst, F_DraggableContainer *src) {
-  f_dock_draggable(dst, src, true);
+  f_dock_draggable_rb(dst, src, true);
 }
 
 
 void f_dock_draggable_b(F_DraggableContainer *dst, F_DraggableContainer *src) {
-  f_dock_draggable(dst, src, false);
+  f_dock_draggable_rb(dst, src, false);
+}
+
+void f_dock_draggable_l(F_DraggableContainer *dst, F_DraggableContainer *src) {
+  f_dock_draggable_lt(dst, src, true);
+}
+
+
+void f_dock_draggable_t(F_DraggableContainer *dst, F_DraggableContainer *src) {
+  f_dock_draggable_lt(dst, src, false);
 }
 
 static void draw_rect(struct Render2D *render, int l, int r, int t, int b, V3 color) {
@@ -451,16 +431,19 @@ void docker_init(void) {
  
   docker.root = f_root_container_create();
   f_root_container_set_draggable(docker.root, drag0);
-  f_dock_draggable_b(drag0, drag1);
-  f_dock_draggable_b(drag1, drag2);
-  f_dock_draggable_b(drag1, drag3);
-  f_dock_draggable_r(drag3, drag4);
-  f_dock_draggable_r(drag3, drag5);
-  f_dock_draggable_b(drag5, drag6);
-  f_dock_draggable_b(drag5, drag7);
-  f_dock_draggable_r(drag2, drag8);
+  f_dock_draggable_l(drag0, drag1);
+  f_dock_draggable_l(drag0, drag2);
+  f_dock_draggable_b(drag2, drag3);
+  f_dock_draggable_t(drag1, drag4);
 
-
+  //f_dock_draggable_b(drag0, drag1);
+  //f_dock_draggable_b(drag1, drag2);
+  //f_dock_draggable_b(drag1, drag3);
+  //f_dock_draggable_r(drag3, drag4);
+  //f_dock_draggable_r(drag3, drag5);
+  //f_dock_draggable_b(drag5, drag6);
+  //f_dock_draggable_b(drag5, drag7);
+  //f_dock_draggable_r(drag2, drag8);
 
   printf("number of containers used: %d\n", docker.buffer_count);
   
